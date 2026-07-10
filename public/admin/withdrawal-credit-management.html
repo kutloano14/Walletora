@@ -1,0 +1,2859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walletora Admin - Withdrawal & Credit Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .config-panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .config-status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+        
+        .config-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 5px solid #28a745;
+        }
+        
+        .config-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 5px solid #dc3545;
+        }
+        
+        /* Tab Navigation */
+        .tab-navigation {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            background: #f8f9fa;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-color: #4f46e5;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value.pending { color: #f39c12; }
+        .stat-value.approved { color: #27ae60; }
+        .stat-value.paid { color: #2ecc71; }
+        .stat-value.total { color: #667eea; }
+        .stat-value.rejected { color: #e74c3c; }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-change {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .table-content {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .withdrawal-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .withdrawal-table th,
+        .withdrawal-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .withdrawal-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .withdrawal-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-paid { background: #d1ecf1; color: #0c5460; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-paid {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 2rem;
+            color: #e74c3c;
+            font-size: 1.1rem;
+        }
+        
+        .customer-info {
+            font-size: 0.9rem;
+            color: #4a5568;
+            line-height: 1.4;
+        }
+        
+        .customer-info strong {
+            color: #2d3748;
+        }
+        
+        .user-details {
+            max-width: 200px;
+        }
+        
+        .contact-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        /* Login Screen Styles */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-header h1 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+        
+        .login-header p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .login-form {
+            margin-bottom: 2rem;
+        }
+        
+        .login-form .form-group {
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+        
+        .login-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .login-form input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .login-footer {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        /* User Management Styles */
+        .search-filters {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .user-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #4a5568;
+            position: sticky;
+            top: 0;
+        }
+
+        .user-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .user-email {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-id {
+            color: #999;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .role-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .role-customer { background: #e3f2fd; color: #1976d2; }
+        .role-driver { background: #fff3e0; color: #f57c00; }
+        .role-restaurant { background: #f3e5f5; color: #7b1fa2; }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-view { background: #e3f2fd; color: #1976d2; }
+        .btn-view:hover { background: #bbdefb; }
+
+        .btn-edit { background: #e8f5e8; color: #2e7d32; }
+        .btn-edit:hover { background: #c8e6c9; }
+
+        .btn-suspend { background: #fff3e0; color: #ef6c00; }
+        .btn-suspend:hover { background: #ffe0b2; }
+
+        .btn-delete { background: #ffebee; color: #d32f2f; }
+        .btn-delete:hover { background: #ffcdd2; }
+
+        .confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem 1rem;
+        }
+
+        .confirmation-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            margin: auto;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .confirmation-buttons .btn {
+            min-width: 100px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .danger-input {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .danger-input:focus {
+            outline: none;
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+        }
+
+        .warning-text {
+            color: #dc3545;
+            font-weight: bold;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #ffebee;
+            border-radius: 8px;
+            border-left: 5px solid #dc3545;
+        }
+
+        /* Mobile responsiveness for modals */
+        @media (max-width: 768px) {
+            .confirmation-modal {
+                padding: 1rem 0.5rem;
+            }
+            
+            .confirmation-content {
+                padding: 1.5rem;
+                max-width: 95%;
+                max-height: 95vh;
+            }
+            
+            .confirmation-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .confirmation-buttons .btn {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen" style="display: flex;">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🔒 Walletora Admin Access</h1>
+                <p>Secure Withdrawal & Credit Management</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="adminPassword">Admin Password:</label>
+                    <input type="password" id="adminPassword" required placeholder="Enter admin password" />
+                </div>
+                <button type="submit" class="login-btn">🚀 Access Dashboard</button>
+            </form>
+            <div class="login-footer">
+                <p>⚠️ Authorized personnel only</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (hidden initially) -->
+    <div id="mainDashboard" class="container hidden" style="display: none;">
+        <div class="header">
+            <h1>🏢 Walletora Admin</h1>
+            <p>Withdrawal Management & Credit Approval System</p>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <h3>🔧 Database Configuration</h3>
+            <div class="form-group">
+                <label for="supabaseUrl">Supabase URL:</label>
+                <input type="url" id="supabaseUrl" value="" placeholder="https://your-project.supabase.co" />
+            </div>
+            <div class="form-group">
+                <label for="supabaseKey">Supabase Service Role Key:</label>
+                <input type="password" id="supabaseKey" value="" placeholder="Your service role key" />
+            </div>
+            <button class="btn" onclick="connectDatabase()">🚀 Connect & Load Data</button>
+            <div id="configStatus"></div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('withdrawals')" id="withdrawals-tab">
+                    💸 Withdrawal Management
+                </button>
+                <button class="tab-button" onclick="switchTab('credits')" id="credits-tab">
+                    💳 Credit Approvals
+                </button>
+                <button class="tab-button" onclick="switchTab('orders')" id="orders-tab">
+                    📦 Order Management
+                </button>
+                <button class="tab-button" onclick="switchTab('users')" id="users-tab">
+                    👥 User Management
+                </button>
+            </div>
+        </div>
+
+        <!-- Withdrawals Tab Content -->
+        <div id="withdrawals-content" class="tab-content active">
+            <div class="section-header">
+                <h2 class="section-title">💸 Withdrawal Management</h2>
+                <button class="refresh-btn" onclick="loadWithdrawals()">🔄 Refresh</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value pending" id="pendingCount">0</div>
+                    <div class="stat-label">Pending Withdrawals</div>
+                    <div class="stat-change">Awaiting approval</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value approved" id="approvedCount">0</div>
+                    <div class="stat-label">Approved Withdrawals</div>
+                    <div class="stat-change">Ready for payment</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value paid" id="paidCount">0</div>
+                    <div class="stat-label">Paid Withdrawals</div>
+                    <div class="stat-change">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value total" id="totalWithdrawalAmount">R0</div>
+                    <div class="stat-label">Total Amount</div>
+                    <div class="stat-change">All withdrawals</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📋 Withdrawal Requests</h3>
+                </div>
+                <div class="table-content">
+                    <div id="withdrawalsContainer">
+                        <div class="loading">Click refresh to load withdrawal requests...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Management Tab Content -->
+        <div id="orders-content" class="tab-content">
+            <div class="section-header">
+                <h2 class="section-title">📦 Order Management</h2>
+                <button class="refresh-btn" id="refreshOrdersBtn" onclick="loadOrders()">🔄 Refresh</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <input type="text" id="ordersSearchInput" placeholder="Search orders by ID, customer, or driver..." style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; margin-bottom: 1rem;">
+                <select id="ordersStatusFilter" onchange="filterOrders()" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; margin-right: 1rem;">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready_for_pickup">Ready for Pickup</option>
+                    <option value="picked_up">Picked Up</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>Active Orders</h3>
+                </div>
+                <div class="table-content">
+                    <div id="ordersContainer" style="min-height: 300px;">
+                        <div class="loading">Loading orders...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab Content -->
+        <div id="users-content" class="tab-content">
+            <div class="section-header">
+                <h2 class="section-title">👥 User Management</h2>
+                <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh Users</button>
+            </div>
+
+            <!-- User Search and Filters -->
+            <div class="config-panel">
+                <h3>🔍 Search & Filter Users</h3>
+                <div class="search-filters">
+                    <input type="text" id="userSearchInput" placeholder="Search by name, email, or ID..." onkeyup="searchUsers()" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;">
+                    <select id="roleFilter" onchange="filterUsers()" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;">
+                        <option value="all">All Roles</option>
+                        <option value="customer">👤 Customers</option>
+                        <option value="driver">🚚 Drivers</option>
+                        <option value="restaurant">🏪 Restaurants</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterUsers()" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;">
+                        <option value="all">All Status</option>
+                        <option value="active">✅ Active</option>
+                        <option value="inactive">⏸️ Inactive</option>
+                    </select>
+                    <button class="btn" onclick="exportUsers()" style="background: #28a745; padding: 0.75rem 1rem;">📥 Export</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value total" id="totalUsersCount">0</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-change">All registered users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value approved" id="customersCount">0</div>
+                    <div class="stat-label">Customers</div>
+                    <div class="stat-change">👤 Customer accounts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value pending" id="driversCount">0</div>
+                    <div class="stat-label">Drivers</div>
+                    <div class="stat-change">🚚 Driver accounts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value paid" id="restaurantsCount">0</div>
+                    <div class="stat-label">Restaurants</div>
+                    <div class="stat-change">🏪 Restaurant accounts</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>📋 User Directory - <span id="filteredUserCount">0</span> users</h3>
+                </div>
+                <div class="table-content">
+                    <div id="usersContainer">
+                        <div class="loading">Click refresh to load users...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Panel -->
+            <div class="config-panel" style="background: #fff3cd; border-left: 5px solid #856404; margin-top: 2rem;">
+                <h3>⚠️ Bulk User Actions</h3>
+                <p style="color: #856404; margin-bottom: 1rem;"><strong>Danger Zone:</strong> These actions are irreversible and can significantly impact your business. Use with extreme caution.</p>
+                
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn" onclick="bulkExportUsers()" style="background: #28a745;">📥 Export All User Data</button>
+                    <button class="btn" onclick="sendBulkEmail()" style="background: #17a2b8;">📧 Send Bulk Email</button>
+                    <button class="btn" onclick="confirmBulkDelete()" style="background: #dc3545;">🗑️ Bulk Delete Users</button>
+                </div>
+                <div id="bulkActionStatus" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
+        <!-- Credits Tab Content -->
+        <div id="credits-content" class="tab-content">
+            <div class="section-header">
+                <h2 class="section-title">💳 Credit Approvals</h2>
+                <button class="refresh-btn" onclick="loadCredits()">🔄 Refresh</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value pending" id="pendingCreditsCount">0</div>
+                    <div class="stat-label">Pending Applications</div>
+                    <div class="stat-change">Awaiting review</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value approved" id="activeCreditsCount">0</div>
+                    <div class="stat-label">Active Credits</div>
+                    <div class="stat-change">Currently active</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value paid" id="paidCreditsCount">0</div>
+                    <div class="stat-label">Repaid Credits</div>
+                    <div class="stat-change">Completed payments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value rejected" id="rejectedCreditsCount">0</div>
+                    <div class="stat-label">Rejected Applications</div>
+                    <div class="stat-change">Denied credits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value total" id="totalCreditAmount">R0</div>
+                    <div class="stat-label">Total Active Value</div>
+                    <div class="stat-change">All active credits</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3>🏦 Credit Applications</h3>
+                    <select id="statusFilter" onchange="filterCredits()" style="margin-left: 10px; padding: 5px;">
+                        <option value="all">All Credits</option>
+                        <option value="pending">Pending Only</option>
+                        <option value="active">Active Only</option>
+                        <option value="paid">Repaid Only</option>
+                        <option value="approved">Approved Only</option>
+                        <option value="rejected">Rejected Only</option>
+                    </select>
+                </div>
+                <div class="table-content">
+                    <div id="creditsContainer">
+                        <div class="loading">Click refresh to load credit applications...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div> <!-- Close mainDashboard -->
+
+    <script>
+        // Admin Authentication
+        const ADMIN_PASSWORD = 'walletora2025admin!'; // Change this to a secure password
+        let isAuthenticated = false;
+        let adminSupabase = null;
+        let withdrawals = [];
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+        
+        function initializeApp() {
+            // Handle login form submission
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const enteredPassword = document.getElementById('adminPassword').value;
+                    
+                    if (enteredPassword === ADMIN_PASSWORD) {
+                        isAuthenticated = true;
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('mainDashboard').classList.remove('hidden');
+                        document.getElementById('mainDashboard').style.display = 'block';
+                    } else {
+                        alert('❌ Incorrect password. Contact IT support for assistance.');
+                        document.getElementById('adminPassword').value = '';
+                    }
+                });
+            }
+
+            // Setup orders search and filter listeners
+            const ordersSearchInput = document.getElementById('ordersSearchInput');
+            const ordersStatusFilter = document.getElementById('ordersStatusFilter');
+            const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+
+            if (ordersSearchInput) {
+                ordersSearchInput.addEventListener('keyup', filterOrders);
+            }
+            if (ordersStatusFilter) {
+                ordersStatusFilter.addEventListener('change', filterOrders);
+            }
+            if (refreshOrdersBtn) {
+                refreshOrdersBtn.addEventListener('click', loadOrders);
+            }
+        }
+        
+        // Redirect to login if not authenticated
+        function checkAuthentication() {
+            if (!isAuthenticated) {
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainDashboard').style.display = 'none';
+                return false;
+            }
+            return true;
+        }
+
+        // Connect to database
+        async function connectDatabase() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                showConfigStatus('Please provide both Supabase URL and Service Role Key', 'error');
+                return;
+            }
+
+            try {
+                adminSupabase = window.supabase.createClient(url, key);
+                
+                // Test connection
+                const { data, error } = await adminSupabase.from('withdrawals').select('count').limit(1);
+                
+                if (error) {
+                    throw error;
+                }
+
+                showConfigStatus('✅ Connected successfully!', 'success');
+                
+                // Load initial data for active tab
+                const activeTab = document.querySelector('.tab-button.active').id.replace('-tab', '');
+                if (activeTab === 'withdrawals') {
+                    await loadWithdrawals();
+                } else if (activeTab === 'credits') {
+                    await loadCredits();
+                }
+                
+            } catch (err) {
+                showConfigStatus(`❌ Connection failed: ${err.message}`, 'error');
+                console.error('Connection error:', err);
+            }
+        }
+
+        function showConfigStatus(message, type) {
+            const status = document.getElementById('configStatus');
+            status.className = `config-status config-${type}`;
+            status.textContent = message;
+        }
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-content').classList.add('active');
+            
+            // Add active class to selected tab button
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Load orders when switching to orders tab
+            if (tabName === 'orders') {
+                loadOrders();
+            }
+            
+            // Load tab-specific data if connected
+            if (adminSupabase) {
+                if (tabName === 'withdrawals') {
+                    loadWithdrawals();
+                } else if (tabName === 'credits') {
+                    loadCredits();
+                } else if (tabName === 'users') {
+                    loadUsers();
+                }
+            }
+        }
+
+        // Order Management Functions
+        let allOrders = [];
+
+        async function loadOrders() {
+            if (!adminSupabase) {
+                showConfigStatus('Please connect to database first', 'error');
+                return;
+            }
+
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = '<div class="loading">Loading orders...</div>';
+
+            try {
+                // Load orders with related data
+                const { data, error } = await adminSupabase
+                    .from('orders')
+                    .select(`
+                        id,
+                        customer_id,
+                        restaurant_id,
+                        status,
+                        total_amount,
+                        created_at,
+                        deliveries (
+                            id,
+                            driver_id,
+                            status
+                        ),
+                        restaurants (
+                            name
+                        ),
+                        customer:user_profiles!orders_customer_id_fkey (
+                            full_name
+                        )
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (error) throw error;
+
+                allOrders = data || [];
+                renderOrders(allOrders);
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading orders: ${error.message}</div>`;
+                console.error('Orders loading error:', error);
+            }
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('ordersContainer');
+            
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: #999;">No orders found</div>';
+                return;
+            }
+
+            const table = `
+                <table class="withdrawal-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Restaurant</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Driver</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => {
+                            const delivery = order.deliveries && order.deliveries[0];
+                            const driverName = delivery ? '🚚 Assigned' : '⏳ Unassigned';
+                            const driverId = delivery?.driver_id || null;
+                            
+                            return `
+                                <tr>
+                                    <td><strong>${order.id.substring(0, 8)}...</strong></td>
+                                    <td>${order.customer?.full_name || 'Unknown'}</td>
+                                    <td>${order.restaurants?.name || 'Unknown'}</td>
+                                    <td>R${parseFloat(order.total_amount).toFixed(2)}</td>
+                                    <td><span style="padding: 0.25rem 0.5rem; background: #e3f2fd; border-radius: 5px; font-size: 0.85rem;">${order.status}</span></td>
+                                    <td>${driverName}</td>
+                                    <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <button onclick="showReassignModal('${order.id}', '${order.customer?.full_name || 'Customer'}', ${driverId ? `'${driverId}'` : 'null'})" style="padding: 0.5rem 1rem; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                            ↔️ Reassign
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        function filterOrders() {
+            const searchText = document.getElementById('ordersSearchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('ordersStatusFilter').value;
+
+            const filtered = allOrders.filter(order => {
+                const matchesSearch = 
+                    order.id.toLowerCase().includes(searchText) ||
+                    (order.customer?.full_name || '').toLowerCase().includes(searchText) ||
+                    (order.restaurants?.name || '').toLowerCase().includes(searchText);
+                
+                const matchesStatus = !statusFilter || order.status === statusFilter;
+                
+                return matchesSearch && matchesStatus;
+            });
+
+            renderOrders(filtered);
+        }
+
+        function showReassignModal(orderId, customerName, currentDriverId) {
+            console.log('Reassigning order:', orderId, 'from driver:', currentDriverId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-content" style="width: 500px; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="color: #667eea; margin-bottom: 1.5rem;">↔️ Reassign Order</h2>
+                    
+                    <div style="background: #f5f7fa; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                        <p><strong>Order ID:</strong> ${orderId.substring(0, 8)}...</p>
+                        <p><strong>Customer:</strong> ${customerName}</p>
+                        <p><strong>Current Driver:</strong> ${currentDriverId ? 'Assigned' : 'Unassigned'}</p>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Select New Driver:</label>
+                        <select id="driverSelect" style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;">
+                            <option value="">Loading drivers...</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Reason for Reassignment:</label>
+                        <textarea id="reassignReason" placeholder="e.g., Driver unavailable, Distance issue, Customer request..." style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; min-height: 80px;"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="this.closest('.confirmation-modal').remove()" style="flex: 1; padding: 0.75rem; background: #e2e8f0; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">Cancel</button>
+                        <button onclick="performReassignment('${orderId}', '${currentDriverId || ''}', document.getElementById('driverSelect').value, document.getElementById('reassignReason').value)" style="flex: 1; padding: 0.75rem; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">✓ Reassign Order</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Load available drivers
+            loadAvailableDrivers();
+        }
+
+        async function loadAvailableDrivers() {
+            try {
+                const { data: drivers, error } = await adminSupabase
+                    .from('drivers')
+                    .select(`
+                        id,
+                        user_id,
+                        is_available,
+                        vehicle_type,
+                        total_deliveries,
+                        user_profiles!drivers_user_id_fkey (
+                            full_name,
+                            phone
+                        )
+                    `)
+                    .order('is_available', { ascending: false });
+
+                if (error) throw error;
+
+                if (!drivers || drivers.length === 0) {
+                    const select = document.getElementById('driverSelect');
+                    select.innerHTML = '<option value="">No drivers available</option>';
+                    return;
+                }
+
+                const select = document.getElementById('driverSelect');
+                select.innerHTML = `
+                    <option value="">-- Select a driver --</option>
+                    ${drivers.map(driver => {
+                        const label = `${driver.user_profiles?.full_name || 'Unknown'} (${driver.total_deliveries || 0} deliveries)`;
+                        const status = driver.is_available ? '✓ Available' : '✗ Unavailable';
+                        // IMPORTANT: Value is driver.user_id (which is user_profiles.id) because that's what the FK expects
+                        return `<option value="${driver.user_id}" data-driver-id="${driver.id}" data-user-id="${driver.user_id}" ${driver.is_available ? '' : 'disabled'}>
+                            ${label} - ${status}
+                        </option>`;
+                    }).join('')}
+                `;
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+                const select = document.getElementById('driverSelect');
+                select.innerHTML = `<option value="">Error loading drivers: ${error.message}</option>`;
+            }
+        }
+
+        async function performReassignment(orderId, oldDriverId, newDriverId, reason) {
+            if (!newDriverId) {
+                alert('Please select a new driver');
+                return;
+            }
+
+            try {
+
+                // Step 1: Find the delivery for this order
+                const { data: deliveryData, error: fetchError } = await adminSupabase
+                    .from('deliveries')
+                    .select('id, order_id, driver_id, status')
+                    .eq('order_id', orderId)
+                    .single();
+
+                if (fetchError) {
+                    throw new Error(`Could not find delivery for order: ${fetchError.message}`);
+                }
+
+                // Step 2: Update the delivery with new driver
+                const { error: updateError, data: updateData } = await adminSupabase
+                    .from('deliveries')
+                    .update({ driver_id: newDriverId })
+                    .eq('id', deliveryData.id)
+                    .select('id, driver_id, status');
+
+                if (updateError) {
+                    console.error('Delivery update failed:', updateError);
+                    throw new Error(`Failed to update delivery: ${updateError.message}`);
+                }
+
+                if (!updateData || updateData.length === 0) {
+                    throw new Error('Delivery update returned no data');
+                }
+
+                // Step 3: Update the orders table with new driver
+                const { error: orderUpdateError, data: orderUpdateData } = await adminSupabase
+                    .from('orders')
+                    .update({ driver_id: newDriverId })
+                    .eq('id', orderId)
+                    .select('id, driver_id, status');
+
+                if (orderUpdateError) {
+                    console.error('Orders table update failed:', orderUpdateError);
+                    throw new Error(`Failed to update orders table: ${orderUpdateError.message}`);
+                }
+
+                // Step 4: Verify both changes took effect
+                const { data: verifyDelivery } = await adminSupabase
+                    .from('deliveries')
+                    .select('driver_id')
+                    .eq('id', deliveryData.id)
+                    .single();
+
+                const { data: verifyOrder } = await adminSupabase
+                    .from('orders')
+                    .select('driver_id')
+                    .eq('id', orderId)
+                    .single();
+
+                if (verifyDelivery?.driver_id !== newDriverId || verifyOrder?.driver_id !== newDriverId) {
+                    console.warn('⚠️ WARNING: Verification shows inconsistency');
+                }
+
+                alert('✅ Order reassigned successfully!\n\n✅ Updated: deliveries table\n✅ Updated: orders table\n\nOld driver will no longer see this delivery.\nNew driver will see it as their active delivery.');
+                
+                // Close modal
+                const modal = document.querySelector('.confirmation-modal');
+                if (modal) modal.remove();
+                
+                // Refresh orders list
+                await loadOrders();
+            } catch (error) {
+                console.error('❌ Reassignment failed:', error);
+                alert('Error reassigning order:\n' + error.message);
+            }
+        }
+
+        // Withdrawal Management Functions
+        async function loadWithdrawals() {
+            if (!adminSupabase) {
+                showConfigStatus('Please connect to database first', 'error');
+                return;
+            }
+
+            const container = document.getElementById('withdrawalsContainer');
+            container.innerHTML = '<div class="loading">Loading withdrawals...</div>';
+
+            try {
+                // Load withdrawals and user profiles separately to avoid foreign key issues
+                const [withdrawalsResult, usersResult] = await Promise.all([
+                    adminSupabase
+                        .from('withdrawals')
+                        .select('id, amount, withdrawal_fee, user_type, status, requested_at, processed_at, notes, driver_id')
+                        .order('requested_at', { ascending: false })
+                        .limit(100),
+                    adminSupabase
+                        .from('user_profiles')
+                        .select('id, full_name, email, phone')
+                ]);
+
+                if (withdrawalsResult.error) throw withdrawalsResult.error;
+                if (usersResult.error) throw usersResult.error;
+
+                const withdrawalData = withdrawalsResult.data || [];
+                const users = usersResult.data || [];
+
+                // Create a lookup map for users
+                const userMap = {};
+                users.forEach(user => {
+                    userMap[user.id] = user;
+                });
+
+                // Add driver information to withdrawals
+                withdrawals = withdrawalData.map(withdrawal => ({
+                    ...withdrawal,
+                    driver: userMap[withdrawal.driver_id] || null
+                }));
+
+                renderWithdrawals();
+                updateWithdrawalStats();
+
+            } catch (err) {
+                container.innerHTML = `<div class="error">❌ Error loading withdrawals: ${err.message}</div>`;
+                console.error('Withdrawal loading error:', err);
+            }
+        }
+
+        function renderWithdrawals() {
+            const container = document.getElementById('withdrawalsContainer');
+            
+            if (withdrawals.length === 0) {
+                container.innerHTML = '<div class="loading">No withdrawals found.</div>';
+                return;
+            }
+
+            const table = `
+                <table class="withdrawal-table">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Fee</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Requested</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${withdrawals.map(w => `
+                            <tr>
+                                <td class="user-details">
+                                    <strong>${w.driver?.full_name || 'Unknown User'}</strong>
+                                    ${w.driver ? `
+                                        <div class="contact-info">
+                                            📧 ${w.driver.email || 'No email'}
+                                            ${w.driver.phone ? `<br>📞 ${w.driver.phone}` : ''}
+                                        </div>
+                                    ` : ''}
+                                </td>
+                                <td>
+                                    <span class="status-badge" style="background: ${w.user_type === 'customer' ? '#e3f2fd' : '#f3e5f5'}; color: ${w.user_type === 'customer' ? '#1976d2' : '#7b1fa2'};">
+                                        ${w.user_type === 'customer' ? '👤 Customer' : '🚚 Driver'}
+                                    </span>
+                                </td>
+                                <td><strong>R${parseFloat(w.amount).toFixed(2)}</strong></td>
+                                <td>${w.withdrawal_fee ? 'R' + parseFloat(w.withdrawal_fee).toFixed(2) : '-'}</td>
+                                <td><strong>R${(parseFloat(w.amount) + (parseFloat(w.withdrawal_fee) || 0)).toFixed(2)}</strong></td>
+                                <td><span class="status-badge status-${w.status}">${w.status}</span></td>
+                                <td>
+                                    ${new Date(w.requested_at).toLocaleDateString()}
+                                    <div class="contact-info">${new Date(w.requested_at).toLocaleTimeString()}</div>
+                                </td>
+                                <td>
+                                    ${w.status === 'pending' ? `
+                                        <button class="btn-small btn-approve" onclick="updateWithdrawalStatus('${w.id}', 'approved')" title="Approve withdrawal">
+                                            ✅ Approve
+                                        </button>
+                                        <button class="btn-small btn-reject" onclick="updateWithdrawalStatus('${w.id}', 'rejected')" title="Reject withdrawal">
+                                            ❌ Reject
+                                        </button>
+                                    ` : ''}
+                                    ${w.status === 'approved' ? `
+                                        <button class="btn-small btn-paid" onclick="updateWithdrawalStatus('${w.id}', 'paid')" title="Mark as paid">
+                                            💰 Mark Paid
+                                        </button>
+                                    ` : ''}
+                                    ${w.status === 'paid' ? '<span style="color: #28a745;">✅ Complete</span>' : ''}
+                                    ${w.status === 'rejected' ? '<span style="color: #dc3545;">❌ Rejected</span>' : ''}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        function updateWithdrawalStats() {
+            const pending = withdrawals.filter(w => w.status === 'pending').length;
+            const approved = withdrawals.filter(w => w.status === 'approved').length;
+            const paid = withdrawals.filter(w => w.status === 'paid').length;
+            const totalAmount = withdrawals.reduce((sum, w) => sum + parseFloat(w.amount), 0);
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('paidCount').textContent = paid;
+            document.getElementById('totalWithdrawalAmount').textContent = `R${totalAmount.toFixed(2)}`;
+        }
+
+        async function updateWithdrawalStatus(id, status) {
+            try {
+                const { error } = await adminSupabase
+                    .from('withdrawals')
+                    .update({ 
+                        status, 
+                        processed_at: new Date().toISOString(),
+                        notes: `${status} by admin on ${new Date().toLocaleString()}`
+                    })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                showConfigStatus(`✅ Withdrawal ${status} successfully`, 'success');
+                await loadWithdrawals(); // Reload to show updated status
+
+            } catch (err) {
+                showConfigStatus(`❌ Error updating withdrawal: ${err.message}`, 'error');
+                console.error('Update error:', err);
+            }
+        }
+
+        // Credit Management Functions
+        async function loadCredits() {
+            if (!adminSupabase) {
+                showConfigStatus('Please connect to database first', 'error');
+                return;
+            }
+
+            const container = document.getElementById('creditsContainer');
+            container.innerHTML = '<div class="loading">Loading credit applications...</div>';
+
+            try {
+                // Load credits only - keep it simple
+                const creditsResult = await adminSupabase
+                    .from('credits')
+                    .select('id, wallet_id, amount, repayment_period, interest_rate, status, due_date, created_at, approved_at, approved_by')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (creditsResult.error) throw creditsResult.error;
+
+                const credits = creditsResult.data || [];
+                
+                // Normalize status values and filter
+                const normalizedCredits = credits.map(credit => ({
+                    ...credit,
+                    status: (credit.status || '').toString().toLowerCase().trim()
+                }));
+                
+                // Store all credits for filtering
+                allCredits = normalizedCredits;
+                
+                // Apply current filter
+                filterCredits();
+
+            } catch (err) {
+                container.innerHTML = `<div class="error">❌ Error loading credits: ${err.message}</div>`;
+                console.error('Credits loading error:', err);
+            }
+        }
+
+        // Filter credits by status
+        let allCredits = [];
+        
+        function filterCredits() {
+            const filter = document.getElementById('statusFilter').value;
+            let filteredCredits = allCredits;
+            
+            if (filter !== 'all') {
+                filteredCredits = allCredits.filter(credit => {
+                    const normalizedStatus = (credit.status || '').toString().toLowerCase().trim();
+                    return normalizedStatus === filter;
+                });
+            }
+            
+            renderCredits(filteredCredits);
+            updateCreditStats(filteredCredits);
+        }
+
+        function renderCredits(credits) {
+            const container = document.getElementById('creditsContainer');
+            
+            if (credits.length === 0) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <h3>No credit applications found</h3>
+                        <p>This could mean:</p>
+                        <ul>
+                            <li>No credit requests have been submitted yet</li>
+                            <li>Credit requests are being stored in a different table</li>
+                            <li>There's a database connection issue</li>
+                        </ul>
+                        <p>Check the browser console for any error messages.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const table = `
+                    <table class="withdrawal-table">
+                        <thead>
+                            <tr>
+                                <th>Customer Details</th>
+                                <th>Wallet ID</th>
+                                <th>Amount</th>
+                                <th>Interest Rate</th>
+                                <th>Period</th>
+                                <th>Total Repayment</th>
+                                <th>Status</th>
+                                <th>Requested</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${credits.map((c, index) => {
+                                try {
+                                    // Calculate repayment amount using repayment_period and interest
+                                    const interestRate = parseFloat(c.interest_rate) || 0;
+                                    const amount = parseFloat(c.amount) || 0;
+                                    const repaymentPeriod = parseFloat(c.repayment_period) || 0;
+                                    // Calculate total repayment based on period (assuming daily interest)
+                                    const totalRepayment = amount + (amount * interestRate * repaymentPeriod / 365);
+                                    const daysToDue = c.due_date ? Math.ceil((new Date(c.due_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+                                    
+                                    // Map status for display and actions
+                                    const displayStatus = c.status;
+                                    const showActions = c.status === 'pending';
+                                    const isActive = c.status === 'active';
+                                    
+                                    return `
+                            <tr>
+                                <td class="user-details">
+                                    <strong>Credit #${c.id}</strong>
+                                    <div class="contact-info">� Wallet: ${c.wallet_id}</div>
+                                </td>
+                                <td><strong>${c.wallet_id}</strong></td>
+                                <td><strong>R${parseFloat(c.amount).toFixed(2)}</strong></td>
+                                <td><strong>${c.interest_rate ? (c.interest_rate * 100).toFixed(1) : 0}%</strong> annual</td>
+                                <td>${c.repayment_period ? `${c.repayment_period} days` : daysToDue > 0 ? `${daysToDue} days remaining` : c.due_date ? 'Overdue' : 'No due date'}</td>
+                                <td><strong>R${totalRepayment.toFixed(2)}</strong></td>
+                                <td><span class="status-badge status-${c.status}">${c.status.toUpperCase()}</span></td>
+                                <td>
+                                    ${new Date(c.created_at).toLocaleDateString()}
+                                    <div class="contact-info">${new Date(c.created_at).toLocaleTimeString()}</div>
+                                </td>
+                                <td>
+                                    ${showActions ? `
+                                        <button class="btn-small btn-approve" onclick="updateCreditStatus('${c.id}', 'active')" title="Activate credit">
+                                            ✅ Activate
+                                        </button>
+                                        <button class="btn-small btn-reject" onclick="updateCreditStatus('${c.id}', 'rejected')" title="Reject credit">
+                                            ❌ Reject
+                                        </button>
+                                    ` : ''}
+                                    ${isActive ? '<span style="color: #28a745;">💰 Credit Active</span>' : ''}
+                                    ${c.status === 'approved' ? '<span style="color: #28a745;">✅ Approved</span>' : ''}
+                                    ${c.status === 'rejected' ? '<span style="color: #dc3545;">❌ Rejected</span>' : ''}
+                                </td>
+                            </tr>
+                            `;
+                                } catch (error) {
+                                    return `<tr><td colspan="9">Error processing credit #${c.id || index}</td></tr>`;
+                                }
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                container.innerHTML = table;
+                
+            } catch (error) {
+                console.error('Error rendering credits table:', error);
+                container.innerHTML = `<div class="error">❌ Error displaying credits: ${error.message}</div>`;
+            }
+        }
+
+        function updateCreditStats(credits) {
+            const pending = credits.filter(c => c.status === 'pending').length;
+            const active = credits.filter(c => c.status === 'active').length;
+            const paid = credits.filter(c => c.status === 'paid').length;
+            const approved = credits.filter(c => c.status === 'approved').length;
+            const rejected = credits.filter(c => c.status === 'rejected').length;
+            const totalActiveAmount = credits.filter(c => c.status === 'active').reduce((sum, c) => sum + parseFloat(c.amount), 0);
+            const totalApprovedAmount = credits.filter(c => c.status === 'approved').reduce((sum, c) => sum + parseFloat(c.amount), 0);
+
+            document.getElementById('pendingCreditsCount').textContent = pending;
+            document.getElementById('activeCreditsCount').textContent = active;
+            document.getElementById('paidCreditsCount').textContent = paid;
+            document.getElementById('rejectedCreditsCount').textContent = rejected;
+            // Update total to include both active and approved amounts
+            const totalAmount = totalActiveAmount + totalApprovedAmount;
+            document.getElementById('totalCreditAmount').textContent = `R${totalAmount.toFixed(2)}`;
+        }
+
+        async function updateCreditStatus(id, status) {
+            try {
+                // First get the credit details
+                const { data: credit, error: fetchError } = await adminSupabase
+                    .from('credits')
+                    .select('wallet_id, amount')
+                    .eq('id', id)
+                    .single();
+
+                if (fetchError) throw fetchError;
+                
+                console.log('Credit details fetched:', credit);
+
+                const updateData = { status };
+                if (status === 'approved' || status === 'active') {
+                    updateData.approved_at = new Date().toISOString();
+                    updateData.approved_by = 'admin';
+                    
+                    // Add funds to user's wallet when credit is approved
+                    const { data: wallet, error: walletFetchError } = await adminSupabase
+                        .from('wallets')
+                        .select('balance')
+                        .eq('id', credit.wallet_id)
+                        .single();
+
+                    if (walletFetchError) throw walletFetchError;
+
+                    const currentBalance = parseFloat(wallet.balance) || 0;
+                    const creditAmount = parseFloat(credit.amount) || 0;
+                    const newBalance = currentBalance + creditAmount;
+
+                    console.log('Wallet update details:', {
+                        currentBalance,
+                        creditAmount,
+                        newBalance,
+                        rawCreditAmount: credit.amount
+                    });
+
+                    // Update wallet balance
+                    const { error: walletUpdateError } = await adminSupabase
+                        .from('wallets')
+                        .update({ balance: newBalance })
+                        .eq('id', credit.wallet_id);
+
+                    if (walletUpdateError) throw walletUpdateError;
+
+                    // Create transaction record in wallet_transactions table
+                    console.log('Creating transaction:', {
+                        wallet_id: credit.wallet_id,
+                        amount: creditAmount,
+                        amount_raw: credit.amount,
+                        amount_type: typeof credit.amount,
+                        amount_parsed: typeof creditAmount,
+                        type: 'deposit', // Using deposit type temporarily until migration is applied
+                        description: `Credit approved - R${creditAmount.toFixed(2)} added to wallet`
+                    });
+                    
+                    // Ensure amount is a proper number
+                    const finalAmount = parseFloat(creditAmount) || 0;
+                    if (finalAmount <= 0) {
+                        throw new Error(`Invalid credit amount: ${finalAmount} (original: ${credit.amount})`);
+                    }
+                    
+                    const { data: transactionData, error: transactionError } = await adminSupabase
+                        .from('wallet_transactions')
+                        .insert({
+                            wallet_id: credit.wallet_id,
+                            amount: finalAmount,
+                            type: 'deposit', // Using deposit type temporarily until migration is applied
+                            description: `Credit approved - R${finalAmount.toFixed(2)} added to wallet`,
+                            created_at: new Date().toISOString()
+                        })
+                        .select();
+
+                    if (transactionError) {
+                        console.error('Transaction creation error:', transactionError);
+                        alert('Transaction logging failed: ' + transactionError.message);
+                        // Don't throw error for transaction - wallet update was successful
+                    } else {
+                        console.log('Transaction created successfully:', transactionData);
+                    }
+                }
+
+                // Update credit status
+                const { error } = await adminSupabase
+                    .from('credits')
+                    .update(updateData)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                if (status === 'approved' || status === 'active') {
+                    showConfigStatus(`✅ Credit ${status} successfully - R${credit.amount} added to wallet`, 'success');
+                } else {
+                    showConfigStatus(`✅ Credit ${status} successfully`, 'success');
+                }
+                
+                await loadCredits(); // Reload to show updated status
+
+            } catch (err) {
+                showConfigStatus(`❌ Error updating credit: ${err.message}`, 'error');
+                console.error('Credit update error:', err);
+            }
+        }
+
+        // ===========================================
+        // USER MANAGEMENT FUNCTIONS
+        // ===========================================
+        
+        let allUsers = [];
+        let filteredUsers = [];
+
+        // Load all users from database
+        async function loadUsers() {
+            if (!adminSupabase) {
+                showConfigStatus('Please connect to database first', 'error');
+                return;
+            }
+
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '<div class="loading">Loading users...</div>';
+
+            try {
+                // Load users from user_profiles table
+                const usersResult = await adminSupabase
+                    .from('user_profiles')
+                    .select('id, full_name, email, phone, role, created_at')
+                    .order('created_at', { ascending: false });
+
+                if (usersResult.error) throw usersResult.error;
+
+                allUsers = usersResult.data || [];
+                filteredUsers = allUsers;
+                
+                renderUsers();
+                updateUserStats();
+
+                showConfigStatus(`✅ Loaded ${allUsers.length} users successfully`, 'success');
+
+            } catch (err) {
+                container.innerHTML = `<div class="error">❌ Error loading users: ${err.message}</div>`;
+                console.error('User loading error:', err);
+            }
+        }
+
+        // Render users table
+        function renderUsers() {
+            const container = document.getElementById('usersContainer');
+            const userCount = document.getElementById('filteredUserCount');
+            
+            if (filteredUsers.length === 0) {
+                container.innerHTML = '<div class="loading">No users found matching your filters.</div>';
+                userCount.textContent = '0';
+                return;
+            }
+
+            userCount.textContent = filteredUsers.length;
+
+            const table = `
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>User Information</th>
+                            <th>Role</th>
+                            <th>Contact</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredUsers.map(user => `
+                            <tr>
+                                <td class="user-info">
+                                    <div class="user-avatar">
+                                        ${getInitials(user.full_name || 'Unknown')}
+                                    </div>
+                                    <div class="user-details">
+                                        <div class="user-name">${user.full_name || 'No Name'}</div>
+                                        <div class="user-id">ID: ${user.id.slice(0, 8)}...</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="role-badge role-${user.role}">
+                                        ${getRoleIcon(user.role)} ${user.role.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="user-email">📧 ${user.email || 'No email'}</div>
+                                    <div class="contact-info">📞 ${user.phone || 'No phone'}</div>
+                                </td>
+                                <td>
+                                    ${new Date(user.created_at).toLocaleDateString()}
+                                    <div class="contact-info">${new Date(user.created_at).toLocaleTimeString()}</div>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-active">✅ Active</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn btn-view" onclick="viewUserDetails('${user.id}')" title="View Details">
+                                            👁️ View
+                                        </button>
+                                        <button class="action-btn btn-edit" onclick="editUser('${user.id}')" title="Edit User">
+                                            ✏️ Edit
+                                        </button>
+                                        <button class="action-btn btn-suspend" onclick="suspendUser('${user.id}')" title="Suspend User">
+                                            ⏸️ Suspend
+                                        </button>
+                                        <button class="action-btn" style="background:#5b21b6;color:white;" onclick="showAdjustWalletModal('${user.id}', '${(user.full_name||'').replace("'","\\'")}')" title="Adjust Wallet">
+                                            💰 Adjust Wallet
+                                        </button>
+                                        <button class="action-btn btn-delete" onclick="confirmDeleteUser('${user.id}', '${user.full_name || 'Unknown'}')" title="Delete User">
+                                            🗑️ Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+
+        // Update user statistics
+        function updateUserStats() {
+            const total = allUsers.length;
+            const customers = allUsers.filter(u => u.role === 'customer').length;
+            const drivers = allUsers.filter(u => u.role === 'driver').length;
+            const restaurants = allUsers.filter(u => u.role === 'restaurant').length;
+
+            document.getElementById('totalUsersCount').textContent = total;
+            document.getElementById('customersCount').textContent = customers;
+            document.getElementById('driversCount').textContent = drivers;
+            document.getElementById('restaurantsCount').textContent = restaurants;
+        }
+
+        // Search users
+        function searchUsers() {
+            const query = document.getElementById('userSearchInput').value.toLowerCase();
+            
+            filteredUsers = allUsers.filter(user => 
+                (user.full_name && user.full_name.toLowerCase().includes(query)) ||
+                (user.email && user.email.toLowerCase().includes(query)) ||
+                user.id.toLowerCase().includes(query)
+            );
+            
+            // Apply role and status filters
+            filterUsers();
+        }
+
+        // Filter users by role and status
+        function filterUsers() {
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchQuery = document.getElementById('userSearchInput').value.toLowerCase();
+
+            filteredUsers = allUsers.filter(user => {
+                // Search filter
+                const matchesSearch = !searchQuery || 
+                    (user.full_name && user.full_name.toLowerCase().includes(searchQuery)) ||
+                    (user.email && user.email.toLowerCase().includes(searchQuery)) ||
+                    user.id.toLowerCase().includes(searchQuery);
+
+                // Role filter
+                const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+
+                // Status filter (for now, all users are considered active)
+                const matchesStatus = statusFilter === 'all' || statusFilter === 'active';
+
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            renderUsers();
+        }
+
+        // Helper functions
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function getRoleIcon(role) {
+            const icons = {
+                customer: '👤',
+                driver: '🚚', 
+                restaurant: '🏪'
+            };
+            return icons[role] || '👤';
+        }
+
+        // User action functions
+        function viewUserDetails(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            alert(`User Details:\n\nName: ${user.full_name || 'Unknown'}\nEmail: ${user.email || 'No email'}\nPhone: ${user.phone || 'No phone'}\nRole: ${user.role}\nJoined: ${new Date(user.created_at).toLocaleString()}\nID: ${user.id}`);
+        }
+
+        function editUser(userId) {
+            alert('Edit user functionality would redirect to user edit form. Not implemented in this demo.');
+        }
+
+        function suspendUser(userId) {
+            if (confirm('Are you sure you want to suspend this user? They will not be able to access the app.')) {
+                alert('User suspension functionality would be implemented here. This is a demo.');
+            }
+        }
+
+        // Confirm user deletion
+        function confirmDeleteUser(userId, userName) {
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-content">
+                    <h2>⚠️ Confirm User Deletion</h2>
+                    <div class="warning-text">
+                        <strong>DANGER:</strong> You are about to permanently delete the user "${userName}".
+                        This action cannot be undone!
+                    </div>
+                    <p><strong>This will delete:</strong></p>
+                    <ul style="text-align: left; margin: 1rem 0;">
+                        <li>User profile and account</li>
+                        <li>All user's orders and history</li>
+                        <li>Wallet and transaction data</li>
+                        <li>Driver/Restaurant specific data</li>
+                        <li>Any associated records</li>
+                    </ul>
+                    <p>Type <strong>DELETE ${userName}</strong> to confirm:</p>
+                    <input type="text" id="deleteConfirmInput" class="danger-input" placeholder="Type DELETE ${userName}" />
+                    <div class="confirmation-buttons">
+                        <button class="btn" onclick="document.body.removeChild(this.closest('.confirmation-modal'))" style="background: #6c757d;">
+                            Cancel
+                        </button>
+                        <button class="btn" onclick="executeDeleteUser('${userId}', '${userName}')" style="background: #dc3545;">
+                            🗑️ DELETE USER
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Execute user deletion
+        async function executeDeleteUser(userId, userName) {
+            const confirmInput = document.getElementById('deleteConfirmInput').value;
+            const expectedConfirmation = `DELETE ${userName}`;
+            
+            if (confirmInput !== expectedConfirmation) {
+                alert('Confirmation text does not match. Please type exactly: ' + expectedConfirmation);
+                return;
+            }
+
+            try {
+                // Close modal
+                const modal = document.querySelector('.confirmation-modal');
+                if (modal) document.body.removeChild(modal);
+
+                showConfigStatus('Analyzing user data and dependencies...', 'loading');
+
+                // First, check what data this user has
+                const userDependencies = await checkUserDependencies(userId);
+                
+                if (userDependencies.hasOrders || userDependencies.hasTransactions || userDependencies.hasOtherData) {
+                    // Show detailed cascade delete confirmation
+                    showCascadeDeleteConfirmation(userId, userName, userDependencies);
+                    return;
+                }
+
+                // If no dependencies, proceed with simple delete
+                await performUserDeletion(userId, userName);
+
+            } catch (err) {
+                showConfigStatus(`❌ Error analyzing user data: ${err.message}`, 'error');
+                console.error('User deletion error:', err);
+            }
+        }
+
+        // Check what data the user has that would prevent deletion
+        async function checkUserDependencies(userId) {
+            try {
+                // Check for orders where user is customer
+                const { data: customerOrders } = await adminSupabase
+                    .from('orders')
+                    .select('id')
+                    .eq('customer_id', userId)
+                    .limit(1);
+
+                // Check for restaurants owned by user
+                let restaurants = [];
+                console.log('Checking restaurants for user:', userId);
+                
+                // Try multiple approaches to find restaurants
+                try {
+                    console.log('Attempt 1: Trying user_id column...');
+                    const { data: userIdResults, error: userIdError } = await adminSupabase
+                        .from('restaurants')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .limit(1);
+                    
+                    if (userIdError) {
+                        console.log('user_id failed:', userIdError.message);
+                        if (userIdError.code === '42703') {
+                            console.log('Column "user_id" does not exist in restaurants table');
+                        }
+                    } else {
+                        restaurants = userIdResults || [];
+                        console.log(`Found ${restaurants.length} restaurants with user_id`);
+                    }
+                } catch (error) {
+                    console.log('user_id query exception:', error.message);
+                }
+                
+                // If user_id failed, try owner_id
+                if (restaurants.length === 0) {
+                    try {
+                        console.log('Attempt 2: Trying owner_id column...');
+                        const { data: ownerIdResults, error: ownerIdError } = await adminSupabase
+                            .from('restaurants')
+                            .select('id')
+                            .eq('owner_id', userId)
+                            .limit(1);
+                        
+                        if (ownerIdError) {
+                            console.log('owner_id failed:', ownerIdError.message);
+                            if (ownerIdError.code === '42703') {
+                                console.log('Column "owner_id" does not exist in restaurants table');
+                            }
+                        } else {
+                            restaurants = ownerIdResults || [];
+                            console.log(`Found ${restaurants.length} restaurants with owner_id`);
+                        }
+                    } catch (error) {
+                        console.log('owner_id query exception:', error.message);
+                    }
+                }
+                
+                // If both failed, just set empty array and continue
+                if (restaurants.length === 0) {
+                    console.log('No restaurants found (or column name issues) - continuing with empty array');
+                    restaurants = [];
+                }
+
+                // Check for orders where user's restaurant is involved
+                let restaurantOrders = [];
+                if (restaurants && restaurants.length > 0) {
+                    const restaurantIds = restaurants.map(r => r.id);
+                    const { data } = await adminSupabase
+                        .from('orders')
+                        .select('id')
+                        .in('restaurant_id', restaurantIds)
+                        .limit(1);
+                    restaurantOrders = data || [];
+                }
+
+                // Check for deliveries (if user is a driver)
+                const { data: deliveries } = await adminSupabase
+                    .from('deliveries')
+                    .select('id')
+                    .eq('driver_id', userId)
+                    .limit(1);
+
+                // Check for driver profile
+                const { data: driverProfile } = await adminSupabase
+                    .from('drivers')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .limit(1);
+
+                // Check for wallet transactions related to user's orders
+                let walletTransactions = [];
+                try {
+                    // First try to get wallet transactions by order_id (if that column exists)
+                    const { data: userOrders } = await adminSupabase
+                        .from('orders')
+                        .select('id')
+                        .eq('customer_id', userId);
+
+                    if (userOrders && userOrders.length > 0) {
+                        const orderIds = userOrders.map(o => o.id);
+                        try {
+                            const { data } = await adminSupabase
+                                .from('wallet_transactions')
+                                .select('id')
+                                .in('order_id', orderIds)
+                                .limit(1);
+                            walletTransactions = data || [];
+                        } catch (orderError) {
+                            // Fallback: check by wallet_id instead
+                            console.log('order_id approach failed, trying wallet_id...');
+                            const { data: userWallet } = await adminSupabase
+                                .from('wallets')
+                                .select('id')
+                                .eq('user_id', userId)
+                                .single();
+
+                            if (userWallet) {
+                                const { data } = await adminSupabase
+                                    .from('wallet_transactions')
+                                    .select('id')
+                                    .eq('wallet_id', userWallet.id)
+                                    .limit(1);
+                                walletTransactions = data || [];
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('Wallet transactions check failed:', error);
+                }
+
+                return {
+                    hasCustomerOrders: customerOrders && customerOrders.length > 0,
+                    hasRestaurantOrders: restaurantOrders.length > 0,
+                    hasOrders: (customerOrders && customerOrders.length > 0) || restaurantOrders.length > 0,
+                    hasTransactions: walletTransactions.length > 0,
+                    hasDeliveries: deliveries && deliveries.length > 0,
+                    hasDriverProfile: driverProfile && driverProfile.length > 0,
+                    hasRestaurantProfile: restaurants && restaurants.length > 0,
+                    hasOtherData: (customerOrders && customerOrders.length > 0) || 
+                                 restaurantOrders.length > 0 ||
+                                 (deliveries && deliveries.length > 0) ||
+                                 (driverProfile && driverProfile.length > 0) ||
+                                 (restaurants && restaurants.length > 0) ||
+                                 walletTransactions.length > 0,
+                    restaurantIds: restaurants ? restaurants.map(r => r.id) : []
+                };
+            } catch (error) {
+                console.error('Error checking dependencies:', error);
+                return { hasOtherData: true }; // Assume there are dependencies if we can't check
+            }
+        }
+
+        // Show cascade delete confirmation with detailed information
+        function showCascadeDeleteConfirmation(userId, userName, dependencies) {
+            console.log('🔍 SHOWING CASCADE DELETE CONFIRMATION');
+            console.log('User:', userName, 'ID:', userId);
+            console.log('Dependencies found:', dependencies);
+            
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-content">
+                    <h2 style="color: #dc3545; margin-bottom: 1rem;">⚠️ CASCADE DELETE REQUIRED</h2>
+                    <div class="warning-text" style="margin-bottom: 1rem;">
+                        <strong>CRITICAL WARNING:</strong> "${userName}" has related data that must be deleted first.
+                    </div>
+                    
+                    <div style="text-align: left; margin: 1rem 0; padding: 1rem; background: #ffebee; border-radius: 8px; border: 2px solid #dc3545;">
+                        <h4 style="color: #dc3545; margin: 0 0 0.5rem 0;">📊 Data to be permanently deleted:</h4>
+                        <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            ${dependencies.hasCustomerOrders ? '<li>All orders where user is customer</li>' : ''}
+                            ${dependencies.hasRestaurantOrders ? '<li>All orders from user\'s restaurant</li>' : ''}
+                            ${dependencies.hasTransactions ? '<li>All wallet transactions and payment history</li>' : ''}
+                            ${dependencies.hasDeliveries ? '<li>All delivery records and history</li>' : ''}
+                            ${dependencies.hasDriverProfile ? '<li>Driver profile and earnings</li>' : ''}
+                            ${dependencies.hasRestaurantProfile ? '<li>Restaurant profile and menu items</li>' : ''}
+                            <li>User profile and account</li>
+                            <li>Any other associated records</li>
+                        </ul>
+                        <p style="margin: 0.5rem 0; font-weight: bold; color: #dc3545;">⚠️ This action cannot be undone!</p>
+                    </div>
+
+                    <div style="text-align: left; padding: 1rem; background: #e3f2fd; border-radius: 8px; margin: 1rem 0; border: 1px solid #2196f3;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1976d2;">💡 Alternative Options:</h4>
+                        <ul style="margin: 0; padding-left: 1.5rem;">
+                            <li><strong>Suspend Account:</strong> Disable access without deleting data</li>
+                            <li><strong>Export Data:</strong> Download user's data before deletion</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin: 1rem 0;">
+                        <label for="cascadeDeleteInput" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                            To proceed, type: <span style="color: #dc3545;">CASCADE DELETE ${userName}</span>
+                        </label>
+                        <input type="text" id="cascadeDeleteInput" class="danger-input" placeholder="Type CASCADE DELETE ${userName}" style="width: 100%; margin-bottom: 1rem;" />
+                    </div>
+                    
+                    <div class="confirmation-buttons" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" onclick="document.body.removeChild(this.closest('.confirmation-modal'))" style="background: #6c757d; padding: 0.75rem 1rem;">
+                            ❌ Cancel
+                        </button>
+                        <button class="btn" onclick="suspendUserInstead('${userId}', '${userName}')" style="background: #ffc107; color: #000; padding: 0.75rem 1rem;">
+                            ⏸️ Suspend
+                        </button>
+                        <button class="btn" onclick="performCascadeDelete('${userId}', '${userName}')" style="background: #dc3545; padding: 0.75rem 1rem;">
+                            🗑️ DELETE ALL
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+
+            // Focus the input field
+            setTimeout(() => {
+                const input = document.getElementById('cascadeDeleteInput');
+                if (input) input.focus();
+            }, 100);
+        }
+
+        // Perform cascade delete with all related records
+        async function performCascadeDelete(userId, userName) {
+            const confirmInput = document.getElementById('cascadeDeleteInput').value;
+            const expectedConfirmation = `CASCADE DELETE ${userName}`;
+            
+            if (confirmInput !== expectedConfirmation) {
+                alert('Confirmation text does not match. Please type exactly: ' + expectedConfirmation);
+                return;
+            }
+
+            console.log('🚀 CASCADE DELETE VALIDATION PASSED');
+            console.log('User ID:', userId);
+            console.log('User Name:', userName);
+            console.log('Confirmation input:', confirmInput);
+            console.log('Expected:', expectedConfirmation);
+            console.log('Starting deletion process at:', new Date().toISOString());
+
+            try {
+                // Close modal
+                const modal = document.querySelector('.confirmation-modal');
+                if (modal) document.body.removeChild(modal);
+
+                showConfigStatus('🗑️ CASCADE DELETE: Analyzing user data...', 'loading');
+
+                let deletedItems = [];
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 1 - Getting user orders...', 'loading');
+
+                // 1. First get all user's orders (both as customer and through restaurants)
+                let userOrderIds = [];
+                
+                // Get customer orders
+                const { data: customerOrders } = await adminSupabase
+                    .from('orders')
+                    .select('id')
+                    .eq('customer_id', userId);
+
+                if (customerOrders) {
+                    userOrderIds = [...userOrderIds, ...customerOrders.map(o => o.id)];
+                }
+
+                // Get restaurant orders
+                let userRestaurants = [];
+                console.log('=== STEP 1B: Finding user restaurants ===');
+                console.log('User ID:', userId);
+                
+                // Try multiple approaches to find restaurants (same as dependency check)
+                try {
+                    console.log('Attempt 1: Trying user_id column...');
+                    const { data: userIdResults, error: userIdError } = await adminSupabase
+                        .from('restaurants')
+                        .select('id')
+                        .eq('user_id', userId);
+                    
+                    if (userIdError) {
+                        console.log('user_id failed:', userIdError.message, 'Code:', userIdError.code);
+                        if (userIdError.code === '42703') {
+                            console.log('Column "user_id" does not exist in restaurants table');
+                        }
+                    } else {
+                        userRestaurants = userIdResults || [];
+                        console.log(`Found ${userRestaurants.length} restaurants with user_id`);
+                    }
+                } catch (error) {
+                    console.log('user_id query exception:', error.message);
+                }
+                
+                // If user_id failed, try owner_id  
+                if (userRestaurants.length === 0) {
+                    try {
+                        console.log('Attempt 2: Trying owner_id column...');
+                        const { data: ownerIdResults, error: ownerIdError } = await adminSupabase
+                            .from('restaurants')
+                            .select('id')
+                            .eq('owner_id', userId);
+                        
+                        if (ownerIdError) {
+                            console.log('owner_id failed:', ownerIdError.message, 'Code:', ownerIdError.code);
+                            if (ownerIdError.code === '42703') {
+                                console.log('Column "owner_id" does not exist in restaurants table');
+                            }
+                        } else {
+                            userRestaurants = ownerIdResults || [];
+                            console.log(`Found ${userRestaurants.length} restaurants with owner_id`);
+                        }
+                    } catch (error) {
+                        console.log('owner_id query exception:', error.message);
+                    }
+                }
+                
+                // Continue regardless of restaurant query results
+                console.log(`Final restaurant count: ${userRestaurants.length}`);
+                if (userRestaurants.length === 0) {
+                    console.log('No restaurants found - user might not be a restaurant owner');
+                }
+
+                if (userRestaurants && userRestaurants.length > 0) {
+                    const restaurantIds = userRestaurants.map(r => r.id);
+                    const { data: restaurantOrders } = await adminSupabase
+                        .from('orders')
+                        .select('id')
+                        .in('restaurant_id', restaurantIds);
+
+                    if (restaurantOrders) {
+                        userOrderIds = [...userOrderIds, ...restaurantOrders.map(o => o.id)];
+                    }
+                }
+
+                console.log(`Found ${userOrderIds.length} orders associated with user ${userName}`);
+
+                showConfigStatus(`🗑️ CASCADE DELETE: Step 2 - Deleting wallet transactions (${userOrderIds.length} orders)...`, 'loading');
+
+                // 2. Delete wallet transactions that reference user's orders
+                if (userOrderIds.length > 0) {
+                    try {
+                        // First try to delete by order_id (if order_id column exists)
+                        let { error: walletError, count } = await adminSupabase
+                            .from('wallet_transactions')
+                            .delete()
+                            .in('order_id', userOrderIds);
+
+                        if (walletError && walletError.message.includes('column "order_id" does not exist')) {
+                            // Fallback: delete by wallet_id (get user's wallet first)
+                            console.log('order_id column not found, trying wallet_id approach...');
+                            const { data: userWallet } = await adminSupabase
+                                .from('wallets')
+                                .select('id')
+                                .eq('user_id', userId)
+                                .single();
+
+                            if (userWallet) {
+                                const { error: walletErrorFallback, count: countFallback } = await adminSupabase
+                                    .from('wallet_transactions')
+                                    .delete()
+                                    .eq('wallet_id', userWallet.id);
+
+                                if (walletErrorFallback) {
+                                    console.error('Error deleting wallet transactions by wallet_id:', walletErrorFallback);
+                                } else {
+                                    deletedItems.push(`wallet transactions (${countFallback || 'unknown'} records)`);
+                                }
+                            }
+                        } else if (walletError) {
+                            console.error('Error deleting wallet transactions by order_id:', walletError);
+                        } else {
+                            deletedItems.push(`wallet transactions (${count || 'unknown'} records)`);
+                        }
+                    } catch (error) {
+                        console.log('Wallet transactions deletion failed:', error.message);
+                        // Try the wallet_id approach as final fallback
+                        try {
+                            const { data: userWallet } = await adminSupabase
+                                .from('wallets')
+                                .select('id')
+                                .eq('user_id', userId)
+                                .single();
+
+                            if (userWallet) {
+                                const { error: walletErrorFinal } = await adminSupabase
+                                    .from('wallet_transactions')
+                                    .delete()
+                                    .eq('wallet_id', userWallet.id);
+
+                                if (!walletErrorFinal) {
+                                    deletedItems.push(`wallet transactions (via wallet_id)`);
+                                }
+                            }
+                        } catch (finalError) {
+                            console.log('Final wallet transaction deletion attempt failed:', finalError.message);
+                        }
+                    }
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 3 - Deleting deliveries...', 'loading');
+
+                // 3. Delete deliveries where user is driver
+                try {
+                    const { error: deliveryError, count } = await adminSupabase
+                        .from('deliveries')
+                        .delete()
+                        .eq('driver_id', userId);
+
+                    if (deliveryError) {
+                        console.error('Error deleting deliveries:', deliveryError);
+                    } else if (count > 0) {
+                        deletedItems.push(`deliveries (${count} records)`);
+                    }
+                } catch (error) {
+                    console.error('Deliveries deletion failed:', error);
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 4 - Deleting customer orders...', 'loading');
+
+                // 4. Delete orders where user is customer
+                try {
+                    const { error: customerOrderError, count } = await adminSupabase
+                        .from('orders')
+                        .delete()
+                        .eq('customer_id', userId);
+
+                    if (customerOrderError) {
+                        console.error('Error deleting customer orders:', customerOrderError);
+                    } else if (count > 0) {
+                        deletedItems.push(`customer orders (${count} records)`);
+                    }
+                } catch (error) {
+                    console.error('Customer orders deletion failed:', error);
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 5 - Deleting restaurant data...', 'loading');
+
+                // 5. Delete restaurant-related data
+                if (userRestaurants && userRestaurants.length > 0) {
+                    for (const restaurant of userRestaurants) {
+                        try {
+                            // Delete menu items first
+                            const { error: menuError } = await adminSupabase
+                                .from('menus')
+                                .delete()
+                                .eq('restaurant_id', restaurant.id);
+
+                            if (menuError) {
+                                console.log('Menu deletion error (may not exist):', menuError);
+                            }
+
+                            // Delete restaurant orders
+                            const { error: restaurantOrderError, count } = await adminSupabase
+                                .from('orders')
+                                .delete()
+                                .eq('restaurant_id', restaurant.id);
+
+                            if (restaurantOrderError) {
+                                console.error('Error deleting restaurant orders:', restaurantOrderError);
+                            } else if (count > 0) {
+                                deletedItems.push(`restaurant orders (${count} records)`);
+                            }
+                        } catch (error) {
+                            console.error('Restaurant data deletion error:', error);
+                        }
+                    }
+
+                    // Delete restaurants
+                    const { error: restaurantError, count } = await adminSupabase
+                        .from('restaurants')
+                        .delete()
+                        .eq('user_id', userId);
+
+                    if (restaurantError) {
+                        console.error('Error deleting restaurant:', restaurantError);
+                    } else if (count > 0) {
+                        deletedItems.push(`restaurant profiles (${count} records)`);
+                    }
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 6 - Deleting driver profile...', 'loading');
+
+                // 6. Delete driver profile
+                try {
+                    const { error: driverError, count } = await adminSupabase
+                        .from('drivers')
+                        .delete()
+                        .eq('user_id', userId);
+
+                    if (driverError) {
+                        console.error('Error deleting driver profile:', driverError);
+                    } else if (count > 0) {
+                        deletedItems.push(`driver profile (${count} records)`);
+                    }
+                } catch (error) {
+                    console.error('Driver profile deletion failed:', error);
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 8 - Deleting user wallet...', 'loading');
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 8 - Comprehensive wallet cleanup...', 'loading');
+
+                // 8. Comprehensive wallet and related data cleanup
+                try {
+                    console.log('=== COMPREHENSIVE WALLET CLEANUP ===');
+                    console.log('User ID:', userId);
+                    
+                    // Get ALL wallets for this user (there should only be one, but let's be thorough)
+                    const { data: allUserWallets, error: walletsQueryError } = await adminSupabase
+                        .from('wallets')
+                        .select('id')
+                        .eq('user_id', userId);
+                    
+                    if (walletsQueryError) {
+                        console.error('Error querying wallets:', walletsQueryError);
+                    } else {
+                        console.log(`Found ${allUserWallets?.length || 0} wallets for user`);
+                        
+                        if (allUserWallets && allUserWallets.length > 0) {
+                            // Process each wallet
+                            for (const wallet of allUserWallets) {
+                                console.log(`Processing wallet: ${wallet.id}`);
+                                
+                                // 1. Force delete ALL locked_deposits for this wallet
+                                console.log('Deleting locked_deposits...');
+                                const { error: lockedError, count: lockedCount } = await adminSupabase
+                                    .from('locked_deposits')
+                                    .delete()
+                                    .eq('wallet_id', wallet.id);
+                                    
+                                if (lockedError) {
+                                    console.error('Failed to delete locked_deposits:', lockedError);
+                                } else {
+                                    console.log(`Deleted ${lockedCount || 0} locked deposits`);
+                                }
+                                
+                                // 2. Force delete ALL credits for this wallet
+                                console.log('Deleting credits...');
+                                const { error: creditsError, count: creditsCount } = await adminSupabase
+                                    .from('credits')
+                                    .delete()
+                                    .eq('wallet_id', wallet.id);
+                                    
+                                if (creditsError) {
+                                    console.error('Failed to delete credits:', creditsError);
+                                } else {
+                                    console.log(`Deleted ${creditsCount || 0} credits`);
+                                }
+                                
+                                // 3. Force delete ALL remaining wallet_transactions
+                                console.log('Deleting remaining wallet_transactions...');
+                                const { error: txnError, count: txnCount } = await adminSupabase
+                                    .from('wallet_transactions')
+                                    .delete()
+                                    .eq('wallet_id', wallet.id);
+                                    
+                                if (txnError) {
+                                    console.error('Failed to delete wallet_transactions:', txnError);
+                                } else {
+                                    console.log(`Deleted ${txnCount || 0} wallet transactions`);
+                                }
+                                
+                                // 4. Wait a moment to ensure all deletions are processed
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                
+                                // 5. Verify no foreign key constraints remain
+                                console.log('Verifying foreign key constraints...');
+                                
+                                // Check for remaining locked_deposits
+                                const { data: remainingLocked } = await adminSupabase
+                                    .from('locked_deposits')
+                                    .select('id')
+                                    .eq('wallet_id', wallet.id);
+                                    
+                                // Check for remaining credits
+                                const { data: remainingCredits } = await adminSupabase
+                                    .from('credits')
+                                    .select('id')
+                                    .eq('wallet_id', wallet.id);
+                                    
+                                // Check for remaining wallet_transactions
+                                const { data: remainingTxns } = await adminSupabase
+                                    .from('wallet_transactions')
+                                    .select('id')
+                                    .eq('wallet_id', wallet.id);
+                                
+                                console.log('Remaining constraints:');
+                                console.log(`- locked_deposits: ${remainingLocked?.length || 0}`);
+                                console.log(`- credits: ${remainingCredits?.length || 0}`);
+                                console.log(`- wallet_transactions: ${remainingTxns?.length || 0}`);
+                                
+                                if ((remainingLocked?.length || 0) > 0 || 
+                                    (remainingCredits?.length || 0) > 0 || 
+                                    (remainingTxns?.length || 0) > 0) {
+                                    console.error('WARNING: Foreign key constraints still exist!');
+                                }
+                            }
+                            
+                            // 6. Now try to delete all wallets
+                            console.log('Attempting to delete wallets...');
+                            const { error: walletsDeleteError, count: walletsCount } = await adminSupabase
+                                .from('wallets')
+                                .delete()
+                                .eq('user_id', userId);
+
+                            if (walletsDeleteError) {
+                                console.error('WALLET DELETION FAILED:', walletsDeleteError);
+                                console.error('Full error:', JSON.stringify(walletsDeleteError, null, 2));
+                                
+                                // If wallet deletion still fails, show detailed information
+                                throw new Error(`Wallet deletion failed: ${walletsDeleteError.message}`);
+                            } else {
+                                console.log(`Successfully deleted ${walletsCount || 0} wallets`);
+                                if (walletsCount > 0) {
+                                    deletedItems.push(`wallets (${walletsCount} records)`);
+                                    deletedItems.push(`locked deposits and credits (cleaned)`);
+                                }
+                            }
+                        } else {
+                            console.log('No wallets found for user');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Comprehensive wallet cleanup failed:', error);
+                    throw error; // Re-throw to stop the deletion process
+                }
+
+                showConfigStatus('🗑️ CASCADE DELETE: Step 7 - Deleting user profile...', 'loading');
+
+                // 7. Finally delete user profile
+                const { error: userError } = await adminSupabase
+                    .from('user_profiles')
+                    .delete()
+                    .eq('id', userId);
+
+                if (userError) {
+                    throw new Error(`Failed to delete user profile: ${userError.message}`);
+                }
+
+                deletedItems.push('user profile');
+
+                const deletedItemsList = deletedItems.length > 0 ? 
+                    `\n\nSuccessfully deleted: ${deletedItems.join(', ')}` : 
+                    '\n\nUser had no additional data to delete.';
+
+                showConfigStatus(`✅ CASCADE DELETE COMPLETE: "${userName}" permanently deleted${deletedItemsList}`, 'success');
+                
+                // Reload users list
+                await loadUsers();
+
+            } catch (err) {
+                showConfigStatus(`❌ CASCADE DELETE FAILED: ${err.message}`, 'error');
+                console.error('Cascade deletion error:', err);
+                
+                // Show detailed error information
+                if (err.code) {
+                    console.error('Error details:', {
+                        code: err.code,
+                        details: err.details,
+                        hint: err.hint,
+                        message: err.message
+                    });
+                }
+            }
+        }
+
+        // Simple user deletion (when no dependencies exist)
+        async function performUserDeletion(userId, userName) {
+            try {
+                showConfigStatus('Deleting user profile...', 'loading');
+
+                // Delete user from user_profiles table
+                const { error } = await adminSupabase
+                    .from('user_profiles')
+                    .delete()
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                showConfigStatus(`✅ User "${userName}" has been permanently deleted`, 'success');
+                
+                // Reload users list
+                await loadUsers();
+
+            } catch (err) {
+                showConfigStatus(`❌ Error deleting user: ${err.message}`, 'error');
+                console.error('User deletion error:', err);
+            }
+        }
+
+        // Suspend user instead of deleting
+        function suspendUserInstead(userId, userName) {
+            // Close modal
+            const modal = document.querySelector('.confirmation-modal');
+            if (modal) document.body.removeChild(modal);
+            
+            showConfigStatus(`ℹ️ User suspension feature would be implemented here. "${userName}" would be suspended instead of deleted.`, 'success');
+            // TODO: Implement actual suspension logic
+        }
+
+        // ===== Wallet Adjustment (Admin) =====
+        function showAdjustWalletModal(userId, userName) {
+            if (!adminSupabase) {
+                showConfigStatus('Please connect to database first', 'error');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'confirmation-modal';
+            modal.innerHTML = `
+                <div class="confirmation-content" style="max-width:520px;">
+                    <h2 style="color:#5b21b6; margin-bottom:1rem;">💰 Adjust Wallet for ${userName}</h2>
+                    <div style="text-align:left;">
+                        <label style="font-weight:600; display:block; margin-bottom:6px;">Amount (use negative to subtract)</label>
+                        <input id="adjustAmount" type="number" step="0.01" placeholder="e.g. 50.00 or -25.00" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:10px;" />
+
+                        <label style="font-weight:600; display:block; margin-bottom:6px;">Type</label>
+                        <select id="adjustType" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:10px;">
+                            <option value="admin">admin</option>
+                            <option value="deposit">deposit</option>
+                            <option value="withdrawal">withdrawal</option>
+                            <option value="credit_disbursement">credit_disbursement</option>
+                            <option value="repayment">repayment</option>
+                            <option value="payment">payment</option>
+                            <option value="refund">refund</option>
+                            <option value="fee">fee</option>
+                        </select>
+
+                        <label style="font-weight:600; display:block; margin-bottom:6px;">Description</label>
+                        <textarea id="adjustDescription" rows="3" placeholder="Reason for adjustment" style="width:100%; padding:10px; border:1px solid #e2e8f0; border-radius:8px;"></textarea>
+                    </div>
+
+                    <div class="confirmation-buttons" style="margin-top:1rem;">
+                        <button class="btn" id="applyAdjustBtn">✅ Apply Adjustment</button>
+                        <button class="btn" style="background:#6b7280; margin-left:8px;" id="cancelAdjustBtn">Cancel</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            document.getElementById('cancelAdjustBtn').addEventListener('click', () => {
+                if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+            });
+
+            document.getElementById('applyAdjustBtn').addEventListener('click', async () => {
+                const amountEl = document.getElementById('adjustAmount');
+                const typeEl = document.getElementById('adjustType');
+                const descEl = document.getElementById('adjustDescription');
+
+                const amount = parseFloat(amountEl.value);
+                const type = typeEl.value;
+                const description = descEl.value || null;
+
+                if (!Number.isFinite(amount) || amount === 0) {
+                    alert('Please enter a non-zero amount. Use negative to subtract from wallet.');
+                    return;
+                }
+
+                try {
+                    showConfigStatus('Processing wallet adjustment...', 'success');
+
+                    const { data, error } = await adminSupabase.rpc('admin_adjust_user_wallet', {
+                        p_user_id: userId,
+                        p_amount: amount,
+                        p_type: type,
+                        p_description: description
+                    });
+
+                    if (error) throw error;
+
+                    showConfigStatus('✅ Wallet adjusted successfully', 'success');
+                    if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+                    await loadUsers();
+                } catch (err) {
+                    console.error('Adjust wallet error:', err);
+                    showConfigStatus(`❌ ${err.message || 'Failed to adjust wallet'}`, 'error');
+                }
+            });
+        }
+
+        // Export users data
+        function exportUsers() {
+            const csv = convertUsersToCSV(filteredUsers);
+            downloadCSV(csv, `walletora_users_${new Date().toISOString().split('T')[0]}.csv`);
+            showConfigStatus(`✅ Exported ${filteredUsers.length} users to CSV`, 'success');
+        }
+
+        function bulkExportUsers() {
+            const csv = convertUsersToCSV(allUsers);
+            downloadCSV(csv, `walletora_all_users_${new Date().toISOString().split('T')[0]}.csv`);
+            showConfigStatus(`✅ Exported ${allUsers.length} users to CSV`, 'success');
+        }
+
+        function convertUsersToCSV(users) {
+            const headers = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Created At'];
+            const csvContent = [headers.join(',')];
+            
+            users.forEach(user => {
+                const row = [
+                    user.id,
+                    `"${user.full_name || ''}"`,
+                    `"${user.email || ''}"`,
+                    `"${user.phone || ''}"`,
+                    user.role,
+                    new Date(user.created_at).toISOString()
+                ];
+                csvContent.push(row.join(','));
+            });
+            
+            return csvContent.join('\n');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function sendBulkEmail() {
+            alert('Bulk email functionality would integrate with an email service provider. This is a demo.');
+        }
+
+        function confirmBulkDelete() {
+            if (confirm('⚠️ DANGER: Are you sure you want to access bulk delete? This can permanently remove multiple users at once.')) {
+                alert('Bulk delete functionality would show a more advanced interface for selecting and deleting multiple users. This is a demo for safety.');
+            }
+        }
+    </script>
+</body>
+</html>

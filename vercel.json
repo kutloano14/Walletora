@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "name": "walletora",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin/(.*)",
+      "dest": "/admin/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/admin/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_GOOGLE_MAPS_KEY": "@vite_google_maps_key",
+    "VITE_ORS_KEY": "@vite_ors_key",
+    "VITE_PAYFAST_PUBLIC_KEY": "@vite_payfast_public_key",
+    "VITE_APP_NAME": "Walletora",
+    "NODE_ENV": "production"
+  }
+}

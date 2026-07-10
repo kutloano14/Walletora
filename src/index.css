@@ -1,0 +1,137 @@
+@import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark Theme CSS Variables */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7fafc;
+  --bg-tertiary: #edf2f7;
+  --text-primary: #1a202c;
+  --text-secondary: #2d3748;
+  --text-muted: #718096;
+  --border-color: #e2e8f0;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #1a202c;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #a0aec0;
+  --border-color: #4a5568;
+  --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Base dark theme styles */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Dark theme utility classes */
+.theme-bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.theme-bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.theme-bg-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--text-muted);
+}
+
+.theme-border {
+  border-color: var(--border-color);
+}
+
+.theme-shadow {
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+/* Enhanced dark mode for common elements */
+[data-theme="dark"] .bg-white {
+  @apply bg-gray-800;
+}
+
+[data-theme="dark"] .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+  @apply bg-gray-800;
+}
+
+[data-theme="dark"] .text-gray-900 {
+  @apply text-gray-100;
+}
+
+[data-theme="dark"] .text-gray-800 {
+  @apply text-gray-200;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  @apply text-gray-300;
+}
+
+[data-theme="dark"] .text-gray-600 {
+  @apply text-gray-400;
+}
+
+[data-theme="dark"] .border-gray-300 {
+  @apply border-gray-600;
+}
+
+[data-theme="dark"] .border-gray-200 {
+  @apply border-gray-700;
+}
+
+/* Dark theme for forms */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  @apply bg-gray-700 border-gray-600 text-gray-100;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  @apply border-blue-500 ring-blue-500;
+}
+
+/* Dark theme for cards and containers */
+[data-theme="dark"] .shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .shadow-md {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .shadow-lg {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}

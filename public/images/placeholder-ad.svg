@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="728" height="90" viewBox="0 0 728 90" fill="none">
+  <rect width="728" height="90" rx="6" fill="#F3F4F6"/>
+  <text x="20" y="56" fill="#9CA3AF" font-family="Inter, Arial" font-size="20">Advertisement / Promotion</text>
+</svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150" fill="none">
+  <rect width="300" height="150" rx="8" fill="#f1f5f9" />
+  <rect x="16" y="16" width="268" height="118" rx="6" fill="#fff" stroke="#c7f1ff"/>
+  <text x="150" y="80" text-anchor="middle" font-size="18" fill="#0f172a" font-family="Arial">Advertisement</text>
+</svg>

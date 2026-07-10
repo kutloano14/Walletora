@@ -1,0 +1,21 @@
+{
+  "name": "walletora-csv-reports",
+  "version": "1.0.0",
+  "description": "Walletora CSV report generator with email functionality",
+  "main": "local-test.cjs",
+  "scripts": {
+    "test": "node local-test.cjs",
+    "generate-report": "node local-test.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.5",
+    "nodemailer": "^6.9.7",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.14"
+  },
+  "keywords": ["walletora", "csv", "reports", "email"],
+  "author": "Walletora",
+  "license": "MIT"
+}

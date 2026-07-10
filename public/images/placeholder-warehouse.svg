@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300" fill="none">
+  <rect width="400" height="300" rx="8" fill="#F3F4F6"/>
+  <g transform="translate(40,50)">
+    <rect x="0" y="60" width="320" height="140" rx="8" fill="#E5E7EB" />
+    <rect x="20" y="20" width="80" height="40" rx="6" fill="#D1FAE5" />
+    <rect x="120" y="20" width="160" height="40" rx="6" fill="#E0F2FE" />
+    <text x="40" y="180" fill="#9CA3AF" font-family="Inter, Arial" font-size="18">Warehouse image</text>
+  </g>
+</svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" fill="none">
+  <rect width="800" height="450" fill="#f8fafc"/>
+  <rect x="50" y="80" width="700" height="260" rx="12" fill="#e6f6f5" stroke="#06b6d4" stroke-width="4" />
+  <path d="M120 340h560" stroke="#94f7ec" stroke-width="6"/>
+  <g transform="translate(140,120)">
+    <rect x="0" y="0" width="420" height="180" rx="8" fill="#ffffff" stroke="#cdeef0"/>
+    <text x="210" y="95" text-anchor="middle" font-size="28" fill="#0f172a" font-family="Arial">Warehouse Image</text>
+  </g>
+</svg>

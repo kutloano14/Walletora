@@ -181,7 +181,7 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
       (err) => console.error("Geolocation error:", err),
       { 
         enableHighAccuracy: true, 
-        maximumAge: 10000, // 0 means no caching, always get fresh location
+        maximumAge: 100000, // 0 means no caching, always get fresh location
         timeout: 0// 30 seconds timeout
       }
     );

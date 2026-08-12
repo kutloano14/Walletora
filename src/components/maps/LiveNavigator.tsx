@@ -42,6 +42,7 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
   const [distanceToDestination, setDistanceToDestination] = useState<number | null>(null);
   const [hasArrivedAtRestaurant, setHasArrivedAtRestaurant] = useState(false);
   const [hasArrivedAtCustomer, setHasArrivedAtCustomer] = useState(false);
+  const [nextTurn, setNextTurn] = useState<string>("Follow the route");
 
   const { updateDeliveryStatus } = useDeliveryTracking();
 
@@ -67,9 +68,27 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
     return (angle + 360) % 360;
   }, []);
 
+  const getNavigationCenter = useCallback((from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
+    const latDelta = to.lat - from.lat;
+    const lngDelta = to.lng - from.lng;
+    const directDistanceKm = Math.hypot(latDelta, lngDelta) * 111.32;
+    const followDistanceKm = Math.min(Math.max(directDistanceKm * 0.28, 0.15), 0.8);
+    const heading = (getRouteHeading(from, to) * Math.PI) / 180;
+    const latRadians = (from.lat * Math.PI) / 180;
+
+    const latOffset = (followDistanceKm / 111.32) * Math.cos(heading);
+    const lngOffset = (followDistanceKm / (111.32 * Math.cos(latRadians || 0.0001))) * Math.sin(heading);
+
+    return {
+      lat: from.lat + latOffset,
+      lng: from.lng + lngOffset,
+    };
+  }, [getRouteHeading]);
+
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    map.setTilt(45);
+    map.setTilt(65);
+    map.setHeading(0);
     map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
   }, []);
 
@@ -137,11 +156,12 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
         : { lat: order.customer_lat, lng: order.customer_lng }
     ) : driverPos;
 
-    mapRef.current.setCenter(driverPos);
+    const followCenter = getNavigationCenter(driverPos, destination);
+    mapRef.current.setCenter(followCenter);
     mapRef.current.setZoom(17);
-    mapRef.current.setTilt(45);
+    mapRef.current.setTilt(65);
     mapRef.current.setHeading(getRouteHeading(driverPos, destination));
-  }, [driverPos, order, isLoaded, mode, getRouteHeading]);
+  }, [driverPos, order, isLoaded, mode, getNavigationCenter, getRouteHeading]);
 
   // Calculate distance and check arrival
   useEffect(() => {
@@ -203,27 +223,36 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
       (pos) => {
         const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setDriverPos(newPos);
-        
+
         // Update driver marker position smoothly
         if (driverMarkerRef.current) {
           driverMarkerRef.current.position = newPos;
         }
-        
-        // Center map on driver (optional, can be made toggleable)
-        if (mapRef.current) {
+
+        // Follow the driver and keep the route ahead of the car, like a live nav app.
+        if (mapRef.current && order) {
+          const destination = mode === "to_restaurant"
+            ? { lat: order.restaurant_lat, lng: order.restaurant_lng }
+            : { lat: order.customer_lat, lng: order.customer_lng };
+
+          const followCenter = getNavigationCenter(newPos, destination);
+          mapRef.current.panTo(followCenter);
+          mapRef.current.setHeading(getRouteHeading(newPos, destination));
+          mapRef.current.setTilt(65);
+        } else if (mapRef.current) {
           mapRef.current.panTo(newPos);
         }
       },
       (err) => console.error("Geolocation error:", err),
-      { 
-        enableHighAccuracy: true, 
-        maximumAge: 100000, // 0 means no caching, always get fresh location
-        timeout: 0// 30 seconds timeout
+      {
+        enableHighAccuracy: true,
+        maximumAge: 100000,
+        timeout: 0,
       }
     );
 
     return () => navigator.geolocation.clearWatch(watcher);
-  }, []);
+  }, [getNavigationCenter, getRouteHeading, mode, order]);
 
   // Fetch and update directions in real-time
   useEffect(() => {
@@ -253,6 +282,35 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
       }
     );
   }, [driverPos, order, mode, isLoaded]);
+
+  useEffect(() => {
+    if (!directions) {
+      setNextTurn("Follow the route");
+      return;
+    }
+
+    const firstStep = directions.routes[0]?.legs?.[0]?.steps?.find((step) => step.distance && step.distance.value > 0) ?? directions.routes[0]?.legs?.[0]?.steps?.[0];
+
+    if (!firstStep) {
+      setNextTurn("Follow the route");
+      return;
+    }
+
+    const rawInstruction = firstStep.instructions
+      ?.replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const maneuverLabel = firstStep.maneuver
+      ? firstStep.maneuver.replace(/_/g, " ").replace(/-/g, " ")
+      : "Continue";
+
+    const distanceText = firstStep.distance?.text ?? "ahead";
+    const instructionText = rawInstruction && rawInstruction !== "" ? rawInstruction : "Continue straight";
+
+    setNextTurn(`${maneuverLabel.charAt(0).toUpperCase() + maneuverLabel.slice(1)} • ${instructionText} • ${distanceText}`);
+  }, [directions]);
 
   // Cleanup markers on unmount
   useEffect(() => {
@@ -335,6 +393,11 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
             Close
           </button>
         </div>
+      </div>
+
+      <div className="border-b border-white/10 bg-[#0d1d2d] px-4 py-2 shadow-inner">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-sky-200/80">Next turn</p>
+        <p className="mt-1 text-sm font-semibold text-white">{nextTurn}</p>
       </div>
 
       {/* Map */}

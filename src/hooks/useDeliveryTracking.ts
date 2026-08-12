@@ -41,14 +41,8 @@ export const useDeliveryTracking = () => {
         return false;
       }
 
-      // Status updated successfully
-      
-      // Trigger a page refresh to update the UI
-      // This ensures the driver dashboard shows the updated status
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-      
+      // Status updated successfully without forcing a full page refresh.
+      // This keeps the live dashboard stable while the route updates in-place.
       return true;
     } catch (error) {
       console.error('Unexpected error updating delivery status:', error);

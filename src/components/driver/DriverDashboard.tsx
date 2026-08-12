@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Truck, MapPin, DollarSign, Phone, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOrders } from '../../contexts/OrdersContext';
@@ -30,6 +30,11 @@ export function DriverDashboard() {
   const [navigatorOrderId, setNavigatorOrderId] = useState<string | null>(null);
   const [navigatorMode, setNavigatorMode] = useState<'to_restaurant' | 'to_customer'>('to_restaurant');
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [ringingOrderId, setRingingOrderId] = useState<string | null>(null);
+  const [dismissedNewOrderIds, setDismissedNewOrderIds] = useState<string[]>([]);
+  const [acceptToast, setAcceptToast] = useState<string | null>(null);
+  const ringtoneIntervalRef = useRef<number | null>(null);
+  const ringtoneContextRef = useRef<AudioContext | null>(null);
   
   // Add state for earnings data
   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
@@ -98,6 +103,77 @@ export function DriverDashboard() {
     }
   };
 
+  const stopRingtone = useCallback(() => {
+    if (ringtoneIntervalRef.current) {
+      window.clearInterval(ringtoneIntervalRef.current);
+      ringtoneIntervalRef.current = null;
+    }
+
+    if (ringtoneContextRef.current) {
+      ringtoneContextRef.current.close().catch(() => undefined);
+      ringtoneContextRef.current = null;
+    }
+
+    setRingingOrderId(null);
+  }, []);
+
+  const playIncomingOrderRingtone = useCallback((orderId: string) => {
+    const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtor) return;
+
+    if (ringtoneContextRef.current) {
+      ringtoneContextRef.current.resume().catch(() => undefined);
+    } else {
+      ringtoneContextRef.current = new AudioCtor();
+    }
+
+    const playTone = (frequency: number, duration: number) => {
+      const ctx = ringtoneContextRef.current;
+      if (!ctx) return;
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      gainNode.gain.value = 0.0001;
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      const start = ctx.currentTime;
+      gainNode.gain.exponentialRampToValueAtTime(0.06, start + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.start(start);
+      oscillator.stop(start + duration);
+    };
+
+    const sequence = [880, 660, 880, 660, 880];
+    let index = 0;
+
+    const tick = () => {
+      if (index >= sequence.length) {
+        index = 0;
+      }
+      playTone(sequence[index], 0.32);
+      index += 1;
+    };
+
+    tick();
+    ringtoneIntervalRef.current = window.setInterval(tick, 600);
+    setRingingOrderId(orderId);
+  }, []);
+
+  const handleDeclineOrder = useCallback(async (orderId: string) => {
+    setDismissedNewOrderIds((prev) => (prev.includes(orderId) ? prev : [...prev, orderId]));
+    stopRingtone();
+
+    try {
+      await markOrderViewed(orderId);
+    } catch (err) {
+      console.error('Failed to decline order reminder:', err);
+    }
+  }, [markOrderViewed, stopRingtone]);
+
   // Fetch earnings when component mounts or when switching to earnings tab
   useEffect(() => {
     if (activeTab === 'earnings') {
@@ -127,21 +203,21 @@ export function DriverDashboard() {
   const handleAcceptOrder = async (orderId: string) => {
     try {
       if (!profile?.id) throw new Error('Driver profile not found');
-      
+
       setAcceptingOrderId(orderId);
+      setAcceptToast('Accepting order...');
+      stopRingtone();
+
       await acceptOrder(orderId, profile.id);
-      
-      // Ensure fresh data is loaded
-      await refreshOrders();
-      
-      // Switch to active tab to show the accepted order
       setActiveTab('active');
-      
-      // Show success feedback
-      alert('✅ Order accepted successfully! Switching to Active Deliveries...');
-      
+      setAcceptToast('✅ Order accepted. Active route is now open.');
+
+      await refreshOrders();
+      window.setTimeout(() => setAcceptToast(null), 2200);
     } catch (error) {
       console.error('Error accepting order:', error);
+      setAcceptToast('❌ Failed to accept order. Please try again.');
+      window.setTimeout(() => setAcceptToast(null), 2200);
       alert('❌ Failed to accept order. Please try again.');
     } finally {
       setAcceptingOrderId(null);
@@ -176,6 +252,31 @@ const [driverOfferInputs, setDriverOfferInputs] = useState<Record<string, string
   // Lists
   const availableOrders = orders.filter((o) => o.status === 'ready_for_pickup' && o.delivery_included);
   const activeOrders = activeDeliveries;
+  const activeIncomingOrder = availableOrders.find((order) =>
+    !dismissedNewOrderIds.includes(order.id) && !order.driver_has_viewed
+  ) ?? null;
+
+  useEffect(() => {
+    if (!availableOrders.length) {
+      stopRingtone();
+      return;
+    }
+
+    if (!activeIncomingOrder) {
+      stopRingtone();
+      return;
+    }
+
+    if (ringingOrderId !== activeIncomingOrder.id) {
+      playIncomingOrderRingtone(activeIncomingOrder.id);
+    }
+
+    return () => {
+      if (ringingOrderId === activeIncomingOrder.id) {
+        stopRingtone();
+      }
+    };
+  }, [availableOrders, activeIncomingOrder, playIncomingOrderRingtone, ringingOrderId, stopRingtone, dismissedNewOrderIds]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -401,7 +502,54 @@ Please process within 2 business days.
   // Remove old completedOrders calculation - now using the fetched completedDeliveries
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff8dd_0%,_#edf9ff_35%,_#f8fafc_100%)] text-[#173b57]">
+      {acceptToast && (
+        <div className="fixed inset-x-0 top-0 z-[80] flex justify-center px-3 pt-3 sm:px-6">
+          <div className="rounded-xl border border-white/20 bg-slate-900/90 px-4 py-2 text-sm font-medium text-white shadow-xl backdrop-blur-sm">
+            {acceptToast}
+          </div>
+        </div>
+      )}
+
+      {activeIncomingOrder && (
+        <div className="fixed inset-x-0 top-0 z-[60] flex justify-center px-3 pt-3 sm:px-6">
+          <div className="w-full max-w-4xl rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 p-4 text-white shadow-2xl shadow-orange-500/30">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/40">
+                  <Phone className="h-6 w-6 animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">Incoming delivery</p>
+                  <h3 className="text-xl font-bold">New order available</h3>
+                  <p className="text-sm text-amber-50">
+                    {activeIncomingOrder.restaurants?.name || 'Restaurant'} • R{(activeIncomingOrder.delivery_fee_offer_customer ?? activeIncomingOrder.delivery_fee ?? 0).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <button
+                  onClick={() => {
+                    stopRingtone();
+                    handleAcceptOrder(activeIncomingOrder.id);
+                  }}
+                  className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDeclineOrder(activeIncomingOrder.id)}
+                  className="rounded-xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Live Navigator Overlay */}
       {navigatorOrderId && (
         <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm p-3 sm:p-4">
@@ -416,21 +564,23 @@ Please process within 2 business days.
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="border-b border-[#f0d87d] bg-gradient-to-r from-[#f4c95d] via-[#ffe7a3] to-[#aee0ff] shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <Truck className="w-8 h-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Driver Portal</h1>
+              <div className="rounded-xl bg-[#143c5b] p-2 shadow-md shadow-[#143c5b]/20">
+                <Truck className="w-7 h-7 text-[#f4c95d]" />
+              </div>
+              <h1 className="text-xl font-bold text-[#143c5b]">Driver Portal</h1>
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle variant="header" />
-              <span className="text-gray-700">
+              <span className="text-[#173b57] font-medium">
                 Welcome, {profile?.full_name || 'Driver'}
               </span>
               <button
                 onClick={signOut}
-                className="inline-flex items-center space-x-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+                className="inline-flex items-center space-x-2 rounded-lg border border-[#143c5b]/20 bg-white/70 px-3 py-2 text-sm font-medium text-[#143c5b] shadow-sm transition-colors hover:bg-white"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
@@ -441,7 +591,7 @@ Please process within 2 business days.
       </header>
 
       {/* Tabs */}
-      <nav className="bg-white border-b">
+      <nav className="border-b border-[#f0d87d] bg-[#fffaf0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             <button
@@ -493,7 +643,7 @@ Please process within 2 business days.
               </div>
             ) : (
               availableOrders.map((order) => (
-                <div key={order.id} className="bg-white rounded-xl shadow-md p-6">
+                <div key={order.id} className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -590,20 +740,39 @@ Please process within 2 business days.
                     </p>
                   </div>
                 )}
-                <button
-                  onClick={() => handleAcceptOrder(order.id)}
-                  disabled={acceptingOrderId === order.id}
-                  className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                    acceptingOrderId === order.id 
-                      ? 'bg-gray-400 cursor-not-allowed text-white' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {acceptingOrderId === order.id 
-                    ? '⏳ Accepting Order...' 
-                    : `Accept Order - Earn R${(order.delivery_fee_offer_customer ?? order.delivery_fee ?? 0).toFixed(2)}`
-                  }
-                </button>
+
+                {ringingOrderId === order.id && (
+                  <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                    <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-amber-500" />
+                    Incoming order alert ringing
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      stopRingtone();
+                      handleAcceptOrder(order.id);
+                    }}
+                    disabled={acceptingOrderId === order.id}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                      acceptingOrderId === order.id 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {acceptingOrderId === order.id 
+                      ? '⏳ Accepting Order...' 
+                      : `Accept Order - Earn R${(order.delivery_fee_offer_customer ?? order.delivery_fee ?? 0).toFixed(2)}`
+                    }
+                  </button>
+                  <button
+                    onClick={() => handleDeclineOrder(order.id)}
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Decline
+                  </button>
+                </div>
               </div>
               ))
             )}
@@ -635,7 +804,7 @@ Please process within 2 business days.
     ) : (
       <div className="space-y-6">
         {activeOrders.map((order: Order) => (
-          <div key={order.id} className="bg-white rounded-xl shadow-md p-6">
+          <div key={order.id} className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -680,7 +849,7 @@ Please process within 2 business days.
   </div>
 
   {/* Progress Steps */}
-  <div className="bg-gray-50 p-3 rounded-lg mt-4">
+  <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.8),_rgba(238,249,255,0.8))] p-3 rounded-lg mt-4 border border-[#f0d87d]">
     <h4 className="text-sm font-semibold text-gray-700 mb-2">Delivery Progress:</h4>
     <div className="space-y-1">
       <div className={`text-xs flex items-center space-x-2 ${
@@ -906,8 +1075,7 @@ Please process within 2 business days.
                           } else {
                             alert('📦 Pickup complete! Customer will collect from restaurant.');
                           }
-                          // Refresh to show updated status
-                          window.location.reload();
+                          await refreshOrders();
                         } else {
                           alert('❌ Error confirming pickup. Please try again.');
                         }
@@ -958,10 +1126,8 @@ Please process within 2 business days.
                         if (!ok) return alert('❌ Invalid delivery OTP. Ask the customer to check their OTP and try again.');
 
                         alert('✅ Delivery confirmed and earnings recorded!');
-                        // Refresh earnings data
                         await fetchDriverEarnings();
-                        // Refresh the page to show updated status
-                        window.location.reload();
+                        await refreshOrders();
                       } catch (error) {
                         console.error(error);
                         alert('❌ Failed to confirm delivery. Please try again.');
@@ -1006,7 +1172,7 @@ Please process within 2 business days.
     ) : (
       <>
         {/* Earnings Summary */}
-        <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
+        <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 space-y-4 border border-[#f0d87d]">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Earnings Summary</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
@@ -1026,7 +1192,7 @@ Please process within 2 business days.
         </div>
 
         {/* Completed Deliveries List */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Deliveries</h3>
           {completedDeliveries.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No completed deliveries yet</p>
@@ -1058,7 +1224,7 @@ Please process within 2 business days.
         </div>
 
         {/* Withdrawal Section */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Request Withdrawal</h3>
           
           <div className="flex flex-col md:flex-row gap-2">
@@ -1088,7 +1254,7 @@ Please process within 2 business days.
         </div>
 
         {/* Withdrawal History */}
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Withdrawal History</h3>
           {withdrawals.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No withdrawal requests yet</p>

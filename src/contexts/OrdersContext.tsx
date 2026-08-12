@@ -538,6 +538,15 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [user?.id]); // Add dependencies for memoization
 
+  const refreshOrders = useCallback(async () => {
+    await fetchOrders();
+
+    if (profile?.role === 'driver' && user?.id) {
+      const data = await fetchActiveDeliveries();
+      setActiveDeliveries(data);
+    }
+  }, [fetchOrders, fetchActiveDeliveries, profile?.role, user?.id]);
+
   const updateOrderStatus = async (orderId: string, status: string): Promise<void> => {
     try {
       // Special handling for pickup-only orders transitioning to ready_for_pickup
@@ -998,7 +1007,7 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <OrdersContext.Provider
-      value={{ orders, loading, refreshOrders: fetchOrders, updateOrderStatus, acceptOrder, markOrderViewed, submitDriverOffer, submitCustomerOffer, acceptDriverOffer, verifyOtp, requestNewOtp, requestPickupOtp, requestPickupOtpForCustomer, verifyPickupOtp, activeDeliveries }}
+      value={{ orders, loading, refreshOrders, updateOrderStatus, acceptOrder, markOrderViewed, submitDriverOffer, submitCustomerOffer, acceptDriverOffer, verifyOtp, requestNewOtp, requestPickupOtp, requestPickupOtpForCustomer, verifyPickupOtp, activeDeliveries }}
     >
       {children}
     </OrdersContext.Provider>

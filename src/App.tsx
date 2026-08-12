@@ -27,13 +27,13 @@ function AppContent() {
 
   if (!supportedRoles.has(profile.role)) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
-          <h1 className="text-xl font-bold text-slate-900">Account Role Not Routed Yet</h1>
-          <p className="mt-2 text-sm text-slate-600">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff8dd_0%,_#edf9ff_35%,_#f8fafc_100%)] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-2xl border border-[#f0d87d] bg-white/80 p-6 shadow-lg shadow-[#f4c95d]/15 text-center backdrop-blur-sm">
+          <h1 className="text-xl font-bold text-[#173b57]">Account Role Not Routed Yet</h1>
+          <p className="mt-2 text-sm text-[#2e4966]">
             You are signed in, but this account role does not have an app dashboard route yet.
           </p>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-[#5d748a]">
             Role: {profile.role}
           </p>
         </div>

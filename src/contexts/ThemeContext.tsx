@@ -37,14 +37,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--border-color', '#4a5568');
       root.style.setProperty('--shadow', 'rgba(0, 0, 0, 0.3)');
     } else {
-      root.style.setProperty('--bg-primary', '#ffffff');
-      root.style.setProperty('--bg-secondary', '#f7fafc');
-      root.style.setProperty('--bg-tertiary', '#edf2f7');
-      root.style.setProperty('--text-primary', '#1a202c');
-      root.style.setProperty('--text-secondary', '#2d3748');
-      root.style.setProperty('--text-muted', '#718096');
-      root.style.setProperty('--border-color', '#e2e8f0');
-      root.style.setProperty('--shadow', 'rgba(0, 0, 0, 0.1)');
+      root.style.setProperty('--bg-primary', '#fffdf8');
+      root.style.setProperty('--bg-secondary', '#fff7df');
+      root.style.setProperty('--bg-tertiary', '#edf8ff');
+      root.style.setProperty('--text-primary', '#173b57');
+      root.style.setProperty('--text-secondary', '#2e4966');
+      root.style.setProperty('--text-muted', '#5d748a');
+      root.style.setProperty('--border-color', '#e9dba7');
+      root.style.setProperty('--shadow', 'rgba(20, 60, 91, 0.12)');
     }
   }, [theme]);
 

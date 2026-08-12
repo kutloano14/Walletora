@@ -10,6 +10,19 @@ import { useDeliveryTracking } from "../../hooks/useDeliveryTracking";
 // Keep libraries array as a constant outside the component to prevent reloading
 const GOOGLE_MAPS_LIBRARIES: ("marker")[] = ["marker"];
 
+const NAVIGATION_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { featureType: "all", elementType: "geometry", stylers: [{ color: "#1d2e3f" }] },
+  { featureType: "all", elementType: "labels.text.fill", stylers: [{ color: "#e5eef7" }] },
+  { featureType: "all", elementType: "labels.text.stroke", stylers: [{ color: "#0d1b2a", visibility: "on" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#354d68" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#516f8c" }] },
+  { featureType: "road", elementType: "labels", stylers: [{ visibility: "on" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#1d78d6" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#101d2b" }] },
+];
+
 interface LiveNavigatorProps {
   order: Order | undefined;
   mode: "to_restaurant" | "to_customer";
@@ -42,8 +55,22 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
   const restaurantMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const customerMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 
+  const getRouteHeading = useCallback((from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
+    const fromLat = (from.lat * Math.PI) / 180;
+    const toLat = (to.lat * Math.PI) / 180;
+    const dLng = ((to.lng - from.lng) * Math.PI) / 180;
+
+    const x = Math.sin(dLng) * Math.cos(toLat);
+    const y = Math.cos(fromLat) * Math.sin(toLat) - Math.sin(fromLat) * Math.cos(toLat) * Math.cos(dLng);
+    const angle = (Math.atan2(x, y) * 180) / Math.PI;
+
+    return (angle + 360) % 360;
+  }, []);
+
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
+    map.setTilt(45);
+    map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
   }, []);
 
   // Create and update markers using AdvancedMarkerElement
@@ -103,9 +130,18 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
       });
     }
 
-    // Center map on driver position
+    // Keep the route view oriented toward the destination like a live navigation app.
+    const destination = order ? (
+      mode === "to_restaurant"
+        ? { lat: order.restaurant_lat, lng: order.restaurant_lng }
+        : { lat: order.customer_lat, lng: order.customer_lng }
+    ) : driverPos;
+
     mapRef.current.setCenter(driverPos);
-  }, [driverPos, order, isLoaded]);
+    mapRef.current.setZoom(17);
+    mapRef.current.setTilt(45);
+    mapRef.current.setHeading(getRouteHeading(driverPos, destination));
+  }, [driverPos, order, isLoaded, mode, getRouteHeading]);
 
   // Calculate distance and check arrival
   useEffect(() => {
@@ -237,15 +273,18 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
   if (!driverPos) return <div>Fetching your location...</div>;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white">
+    <div className="w-full h-full flex flex-col bg-[#0b1622]">
       {/* Header with Close Button and Status */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#102234]/95 flex-shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
         <div className="flex flex-col">
-          <h2 className="font-semibold text-gray-800 text-sm">
-            {mode === "to_restaurant" ? "Heading to Restaurant" : "Heading to Customer"}
-          </h2>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#7ec8ff] shadow-[0_0_12px_rgba(126,200,255,0.9)]" />
+            <h2 className="font-bold text-white text-sm tracking-wide uppercase">
+              {mode === "to_restaurant" ? "Heading to Restaurant" : "Heading to Customer"}
+            </h2>
+          </div>
           {distanceToDestination && (
-            <span className="text-xs text-gray-600">
+            <span className="mt-1 text-xs font-medium text-sky-100">
               {distanceToDestination < 1 
                 ? `${Math.round(distanceToDestination * 1000)}m away`
                 : `${distanceToDestination.toFixed(1)}km away`
@@ -254,12 +293,12 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
           )}
           {((mode === "to_restaurant" && hasArrivedAtRestaurant) || 
             (mode === "to_customer" && hasArrivedAtCustomer)) && (
-            <span className="text-xs text-green-600 font-semibold">
+            <span className="mt-1 text-xs text-emerald-300 font-semibold">
               ✅ Arrived at destination
             </span>
           )}
         </div>
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2">
           {/* Manual arrival button if GPS detection fails */}
           {distanceToDestination && distanceToDestination < 0.5 && 
            ((mode === "to_restaurant" && !hasArrivedAtRestaurant) || 
@@ -284,14 +323,14 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
                   });
                 }
               }}
-              className="bg-green-500 text-white px-3 py-1 text-xs rounded-md hover:bg-green-600"
+              className="bg-emerald-500 text-white px-3 py-1.5 text-[11px] font-semibold rounded-full shadow-lg shadow-emerald-900/30 hover:bg-emerald-400"
             >
-              📍 Mark as Arrived
+              📍 Arrived
             </button>
           )}
           <button
             onClick={onClose}
-            className="bg-red-500 text-white px-2 py-1 text-xs rounded-md hover:bg-red-600"
+            className="bg-[#f4c95d] text-[#102234] px-3 py-1.5 text-[11px] font-bold rounded-full shadow-lg hover:bg-[#ffd76a]"
           >
             Close
           </button>
@@ -302,29 +341,34 @@ export const LiveNavigator = React.memo<LiveNavigatorProps>(({
       <div className="flex-1 w-full">
         <GoogleMap
           center={driverPos}
-          zoom={16}
+          zoom={17}
           mapContainerStyle={{ width: "100%", height: "100%" }}
           onLoad={onMapLoad}
           options={{
-            mapId: "delivery-map", // Required for Advanced Markers
-            disableDefaultUI: false,
+            mapId: "delivery-map",
+            disableDefaultUI: true,
             zoomControl: true,
             mapTypeControl: false,
-            scaleControl: true,
+            scaleControl: false,
             streetViewControl: false,
-            rotateControl: false,
+            rotateControl: true,
             fullscreenControl: false,
+            gestureHandling: "greedy",
+            clickableIcons: false,
+            keyboardShortcuts: false,
+            styles: NAVIGATION_MAP_STYLES,
           }}
         >
           {directions && (
             <DirectionsRenderer 
               directions={directions}
               options={{
-                suppressMarkers: true, // We're using our custom markers
+                suppressMarkers: true,
+                preserveViewport: false,
                 polylineOptions: {
-                  strokeColor: "#4285F4",
-                  strokeWeight: 5,
-                  strokeOpacity: 0.8,
+                  strokeColor: "#1f6feb",
+                  strokeWeight: 8,
+                  strokeOpacity: 0.92,
                 }
               }}
             />

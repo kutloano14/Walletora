@@ -246,6 +246,10 @@ export default function CustomerDashboard() {
 
       {/* MAIN CONTENT */}
       <div className="mx-auto max-w-6xl p-4 md:p-6">
+        <div className="mb-6 rounded-3xl border border-[#f0d87d] bg-[radial-gradient(circle_at_top_left,_rgba(247,207,91,0.2),_rgba(126,200,255,0.18),_rgba(255,255,255,0.8))] p-5 shadow-[0_12px_30px_rgba(20,60,91,0.08)]">
+          <h1 className="text-2xl font-bold text-[#173b57]">Good day</h1>
+          <p className="mt-1 text-sm text-[#2e4966]">Your market is live and ready.</p>
+        </div>
         {/* HOME / ADS */}
         {activeTab === "home" && (
           <div>
@@ -259,7 +263,7 @@ export default function CustomerDashboard() {
                 {ads.map((ad) => (
                   <li
                     key={ad.id}
-                    className="border rounded-lg p-4 bg-gray-50 flex space-x-4"
+                    className="border border-[#f0d87d] rounded-2xl p-4 bg-[linear-gradient(135deg,_rgba(255,248,228,0.96),_rgba(233,246,255,0.96))] flex space-x-4 shadow-sm"
                   >
                     {ad.image_url && (
                       <img
@@ -347,7 +351,7 @@ export default function CustomerDashboard() {
                 return (
                   <li
                     key={r.id}
-                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+                    className="overflow-hidden rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(238,249,255,0.96))] shadow-sm transition hover:shadow-md"
                   >
                     <img
                       src={r.image_url || "/images/placeholder-warehouse.svg"}
@@ -456,7 +460,7 @@ export default function CustomerDashboard() {
 
             {/* Cart */}
             {cart.length > 0 && (
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mt-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(238,249,255,0.96))] p-4 shadow-sm">
                 <h2 className="text-xl font-bold mb-3">Your Cart</h2>
                 <ul className="space-y-2">
                   {cart.map((item, index) => (

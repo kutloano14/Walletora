@@ -287,7 +287,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
   }
 
   const renderOrderCard = (order: any, showActions = false) => (
-    <div key={order.id} className="bg-white rounded-xl shadow-md p-6">
+    <div key={order.id} className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] rounded-xl shadow-md p-6 border border-[#f0d87d]">
       <div className="flex justify-between items-start mb-4">
         <div>
             <h3 className="text-lg font-semibold text-gray-900">
@@ -306,7 +306,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
   </p>
     <ul className="space-y-2 text-sm text-gray-600">
     {order.order_items?.map((item: { id:string; quantity: number; menu: {name: string; price: number; category?: string; description?: string} | null }) => (
-      <li key={item.id} className="bg-white rounded-lg p-3 shadow-sm border">
+      <li key={item.id} className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.7),_rgba(238,249,255,0.7))] rounded-lg p-3 shadow-sm border border-[#f0d87d]">
         <div className="flex items-center justify-between gap-2">
           <div className="font-semibold text-gray-900">
             {item.menu?.name || "Unknown item"}
@@ -480,9 +480,9 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff3bf_0%,_#f7f4d8_18%,_#daf1ff_42%,_#f8fafc_100%)]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-[linear-gradient(90deg,_#f7cf5b_0%,_#ffd76a_18%,_#aee0ff_72%,_#7ec8ff_100%)] shadow-[0_10px_24px_rgba(58,114,166,0.1)] border-b border-[#f0d87d]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -519,7 +519,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
       </header>
 
       {/* Navigation */}
-      <nav className="bg-white border-b">
+      <nav className="bg-[linear-gradient(135deg,_rgba(255,248,228,0.95),_rgba(224,242,255,0.95))] border-b border-[#f0d87d]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             <button
@@ -558,7 +558,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,247,214,0.97),_rgba(228,244,255,0.97))] p-5 shadow-[0_10px_28px_rgba(58,114,166,0.08)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Store Availability</h2>
@@ -665,7 +665,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
                   </div>
                   
                   {/* Date Filter Section */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-[linear-gradient(135deg,_rgba(255,249,232,0.75),_rgba(238,249,255,0.75))] p-4 rounded-lg border border-[#f0d87d]">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                         <Calendar className="w-5 h-5 mr-2" />
@@ -732,7 +732,7 @@ const handleStatusUpdate = async (orderId: string, status: string) => {
                     </div>
                   </div>
                 </div>
-                <div className="mb-4 p-4 bg-white rounded shadow flex justify-between items-center">
+                <div className="mb-4 p-4 bg-[linear-gradient(135deg,_rgba(255,246,209,0.96),_rgba(230,246,255,0.96))] rounded-xl shadow-sm flex justify-between items-center border border-[#f0d87d]">
                 {completedOrders.length === 0 ? (
                   <div className="text-center py-12">
                     <CheckCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />

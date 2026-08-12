@@ -479,7 +479,7 @@ Please respond to this request within 24 hours.
         )}
 
         {/* BALANCE CARD */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 p-6 shadow-lg text-white">
+        <div className="mb-6 overflow-hidden rounded-3xl border border-[#f0d87d] bg-[linear-gradient(135deg,_#f7cf5b_0%,_#ffc85f_18%,_#7ec8ff_75%,_#4aa3dd_100%)] p-6 shadow-[0_14px_34px_rgba(58,114,166,0.2)] text-white">
           <p className="text-sm font-medium opacity-90">Available Balance</p>
           <h2 className="mt-2 text-4xl font-bold">
             R{wallet?.balance.toFixed(2) || "0.00"}
@@ -523,7 +523,7 @@ Please respond to this request within 24 hours.
             {/* Locked Savings */}
             <Link
               to="/locked-deposits"
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-4 shadow-sm transition hover:shadow-md"
             >
               <div className="text-center">
                 <span className="text-3xl">🔒</span>
@@ -534,7 +534,7 @@ Please respond to this request within 24 hours.
             {/* Credit */}
             <Link
               to="/credit"
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-4 shadow-sm transition hover:shadow-md"
             >
               <div className="text-center">
                 <span className="text-3xl">💰</span>
@@ -543,7 +543,7 @@ Please respond to this request within 24 hours.
             </Link>
 
             {/* Withdraw */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-4 shadow-sm">
               <button
                 onClick={() => setShowWithdrawModal(true)}
                 className="flex w-full flex-col items-center gap-2 transition hover:opacity-75"
@@ -554,7 +554,7 @@ Please respond to this request within 24 hours.
             </div>
           </div>
         ) : (
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Wallet actions are paused</p>
@@ -571,7 +571,7 @@ Please respond to this request within 24 hours.
         )}
 
         {/* CREDIT INFO */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Credit Profile</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
@@ -586,7 +586,7 @@ Please respond to this request within 24 hours.
         </div>
 
         {/* TRANSACTIONS */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Recent Transactions</h2>
           {transactions.length === 0 ? (
             <p className="text-gray-500">No transactions yet</p>
@@ -654,7 +654,7 @@ Please respond to this request within 24 hours.
         </div>
 
         {/* ANALYTICS */}
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.96),_rgba(234,247,255,0.96))] p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-slate-900">Transaction Analytics</h2>
           {transactions.length > 0 ? (
             <Bar data={chartData} />

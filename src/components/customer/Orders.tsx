@@ -64,8 +64,8 @@ export default function Orders() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-2xl font-bold text-slate-900">Your Orders</h2>
+      <div className="rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,245,208,0.9),_rgba(234,247,255,0.9))] p-4 shadow-sm">
+        <h2 className="text-2xl font-bold text-[#173b57]">Your Orders</h2>
         <p className="mt-1 text-sm text-slate-600">Track every order, OTP, delivery update, and price negotiation in one place.</p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
@@ -83,7 +83,7 @@ export default function Orders() {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+            className="overflow-hidden rounded-2xl border border-[#f0d87d] bg-[linear-gradient(135deg,_rgba(255,249,232,0.9),_rgba(238,249,255,0.9))] p-4 shadow-sm transition hover:shadow-md"
           >
             <div className="mb-3 flex justify-between items-center">
               <h3 className="font-semibold text-lg text-slate-900">
@@ -234,8 +234,7 @@ export default function Orders() {
                           const pickupOtp = await requestPickupOtpForCustomer?.(order.id);
                           if (pickupOtp) {
                             alert(`Your pickup OTP is: ${pickupOtp}`);
-                            // Trigger refresh to show the OTP
-                            window.location.reload();
+                            setRegenOtp(prev => ({ ...prev, [order.id]: pickupOtp }));
                           } else {
                             alert('Could not generate pickup OTP.');
                           }

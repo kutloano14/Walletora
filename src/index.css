@@ -3,16 +3,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dark Theme CSS Variables */
+/* Brand Theme CSS Variables */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7fafc;
-  --bg-tertiary: #edf2f7;
-  --text-primary: #1a202c;
-  --text-secondary: #2d3748;
-  --text-muted: #718096;
-  --border-color: #e2e8f0;
-  --shadow: rgba(0, 0, 0, 0.1);
+  --brand-gold: #f7cf5b;
+  --brand-gold-strong: #e8b630;
+  --brand-sky: #7ec8ff;
+  --brand-sky-strong: #3d9ae6;
+  --brand-deep: #143c5b;
+  --brand-soft: #fff8ea;
+  --brand-sky-soft: #edf8ff;
+  --bg-primary: #fff9ee;
+  --bg-secondary: #fff2c7;
+  --bg-tertiary: #eaf6ff;
+  --text-primary: #173b57;
+  --text-secondary: #2e4966;
+  --text-muted: #5d748a;
+  --border-color: #f0d87d;
+  --shadow: rgba(20, 60, 91, 0.12);
 }
 
 [data-theme="dark"] {
@@ -24,6 +31,18 @@
   --text-muted: #a0aec0;
   --border-color: #4a5568;
   --shadow: rgba(0, 0, 0, 0.3);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #fff5d6 0%, #f7f4d8 18%, #eaf6ff 44%, #f8fafc 100%);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+  background: transparent;
 }
 
 /* Base dark theme styles */
